@@ -2,7 +2,7 @@ import { defineConfig } from '@hey-api/openapi-ts';
 
 export default defineConfig({
     input: 'https://git.pixlmint.ch/swagger.v1.json',
-    output: 'app/lib/api/generated',
+    output: 'server/lib/api/generated',
     plugins: [
         '@hey-api/client-fetch',
         '@tanstack/vue-query',
