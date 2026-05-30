@@ -8,13 +8,19 @@ export const getRepos = async () => {
         throw repos.error;
     }
 
-    return repos.data.map(repo => {
-        return {
-            name: repo.name,
-            id: repo.id,
-            updatedAt: Temporal.Instant.from(repo.updated_at!),
-        }
-    })
+    return repos.data
+        .filter(repo => !repo.archived)
+        .map(repo => {
+            return {
+                name: repo.name,
+                id: repo.id,
+                updatedAt: Temporal.Instant.from(repo.updated_at!),
+                description: repo.description,
+                fork: repo.fork,
+                language: repo.language,
+                topics: repo.topics,
+            }
+        })
         .sort((a, b) => Temporal.Instant.compare(a.updatedAt, b.updatedAt))
         .reverse()
 }

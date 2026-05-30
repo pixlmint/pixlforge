@@ -1,13 +1,11 @@
 <template>
-  <div>
-      <h1>Hello World</h1>
-      <NuxtLink to="/">Home</NuxtLink>
-      <NuxtLink to="/about">About</NuxtLink>
-      <NuxtLink to="/repos/asdf">Repo</NuxtLink>
-      <NuxtPage />
-  </div>
+    <Navbar />
+    <div class="page">
+        <NuxtPage />
+    </div>
 </template>
 
 <style>
+@import url("/assets/css/style.scss");
 @import url("vue-json-pretty/lib/styles.css");
 </style>

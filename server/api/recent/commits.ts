@@ -1,23 +1,7 @@
 import type { Activity } from "~~/lib/generated";
+import type { FeedCommitEntryContent } from "~~/server/types";
 import { repoGetSingleCommit } from "~~/lib/generated";
-import { getCombinedRepositoryFeed } from "../feed";
-
-type CommitContent = {
-    Sha1: string;
-    Message: string;
-    AuthorEmail: string;
-    AuthorName: string;
-    CommitterEmail: string;
-    CommitterName: string;
-    Timestamp: string;
-}
-
-type FeedCommitEntryContent = {
-    Commits: CommitContent[],
-    HeadCommit: CommitContent | null,
-    CompareURL: string,
-    Len: number
-}
+import { getCombinedRepositoryFeed, parseActivityContent } from "../feed";
 
 type UnpackedActivity = Activity & {
     jsonContent: FeedCommitEntryContent
@@ -28,11 +12,9 @@ export const getCommits = async () => {
 
     return Promise.all(reposActivities
         .map(entry => {
-            const content = entry.content;
+            const unpackedContent = parseActivityContent(entry);
 
-            if (typeof content === 'string' && content !== '') {
-                const unpackedContent = JSON.parse(content) as FeedCommitEntryContent;
-
+            if (unpackedContent) {
                 const ret = entry as UnpackedActivity;
                 ret.jsonContent = unpackedContent;
 

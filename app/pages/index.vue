@@ -1,12 +1,10 @@
 <template>
     <div>
-        <h1>Hello Custom Page</h1>
-        <div>
-            <RootRepositories :repos="recents.repos" />
-            <RootRecentActions :actions="recents.actions" />
-            <RootRecentIssues :issues="recents.issues" />
-            <RootRecentCommits :commits="recents.commits" />
-        </div>
+        <RootRepositories :repos="recents.repos" />
+        <Feed :feed="recents.activity" />
+        <!-- <RootRecentActions :actions="recents.actions" /> -->
+        <!-- <RootRecentIssues :issues="recents.issues" /> -->
+        <!-- <RootRecentCommits :commits="recents.commits" /> -->
     </div>
 </template>
 

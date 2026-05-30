@@ -14,6 +14,5 @@ export default defineNuxtConfig({
         cache: true,
     },
 
-    css: ['~/assets/css/style.scss'],
     modules: ['@nuxthub/core'],
 })

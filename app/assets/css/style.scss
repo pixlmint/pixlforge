@@ -1,3 +1,63 @@
+:root {
+    --color-bg: black;
+    --color-text: white;
+    --color-secondary: grey;
+    --color-primary: teal;
+    --color-border: rgb(40, 40, 40);
+}
+
 body {
-    background-color: aqua;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+}
+
+
+.data-list {
+    display: grid;
+    grid-template-columns: lfr;
+
+    @for $i from 1 through 75 {
+        --col-#{$i}-width: auto;
+    }
+
+    .data-row {
+        display: grid;
+        border-bottom: 1px solid var(--color-border);
+
+        .data-entry {
+            text-wrap: wrap;
+            padding: 0 10px;
+        }
+    }
+
+    .data-col-secondary {
+        color: var(--color-secondary);
+    }
+}
+
+.feed {
+    .feed-item {
+        margin: 5px 0;
+        padding: 0 5px;
+        display: flex;
+
+        .feed-item-time {
+            color: var(--color-secondary);
+        }
+
+        .feed-item-content {
+            .feed-item-content-header {
+                display: flex;
+                color: var(--color-secondary);
+            }
+
+            .feed-item-content-footer {
+                color: var(--color-secondary);
+            }
+        }
+    }
+}
+
+.vjs-tree-node.is-highlight, .vjs-tree-node:hover {
+    background-color: #2f3d43 !important;
 }

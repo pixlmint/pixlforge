@@ -1,9 +1,9 @@
 import { repoListActivityFeeds, userListRepos } from "~~/lib/generated";
 import { Temporal } from "@js-temporal/polyfill";
+import type { Activity } from "~~/lib/generated";
+import type { ActivityContent, ActivityType } from "../types";
 
-type ActivityType = 'create_repo' | 'rename_repo' | 'star_repo' | 'watch_repo' | 'commit_repo' | 'create_issue' | 'create_pull_request' | 'transfer_repo' | 'push_tag' | 'comment_issue' | 'merge_pull_request' | 'close_issue' | 'reopen_issue' | 'close_pull_request' | 'reopen_pull_request' | 'delete_tag' | 'delete_branch' | 'mirror_sync_push' | 'mirror_sync_create' | 'mirror_sync_delete' | 'approve_pull_request' | 'reject_pull_request' | 'comment_pull' | 'publish_release' | 'pull_review_dismissed' | 'pull_request_ready_for_review' | 'auto_merge_pull_request';
-
-export const getCombinedRepositoryFeed = async (op_types?: ActivityType[]) => {
+export const getCombinedRepositoryFeed = async (op_types?: ActivityType[] | ((activity: Activity) => boolean)) => {
     const repos = await userListRepos({ path: { username: "pixlmint" }, query: { limit: 500 } });
 
     if (repos.error) {
@@ -19,6 +19,8 @@ export const getCombinedRepositoryFeed = async (op_types?: ActivityType[]) => {
 
         if (op_types === undefined) {
             return feed.data;
+        } else if (typeof op_types === 'function') {
+            return feed.data.filter(op_types)
         } else {
             return feed.data.filter(entry => op_types.includes(entry.op_type!))
         }
@@ -29,6 +31,27 @@ export const getCombinedRepositoryFeed = async (op_types?: ActivityType[]) => {
     return reposActivities.flat()
         .sort((a, b) => Temporal.Instant.compare(Temporal.Instant.from(a.created!), Temporal.Instant.from(b.created!)))
         .reverse()
+}
+
+export const parseActivityContent = (entry: Activity): null | ActivityContent => {
+    const content = entry.content;
+
+    if (typeof content !== 'string' || content === '') {
+        return null;
+    }
+
+    const parsed: ActivityContent & [string, string] = JSON.parse(content);
+
+    switch (entry.op_type) {
+        case 'create_issue':
+        case 'comment_issue':
+            return {
+                issueId: Number.parseInt(parsed[0]),
+                text: parsed[1],
+            }
+        default:
+            return parsed;
+    }
 }
 
 
