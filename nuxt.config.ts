@@ -2,6 +2,17 @@
 export default defineNuxtConfig({
     compatibilityDate: '2025-07-15',
 
+    vite: {
+        optimizeDeps: {
+            include: [
+                '@js-temporal/polyfill',
+                '@vue/devtools-core',
+                '@vue/devtools-kit',
+                'vue-json-pretty',
+            ],
+        },
+    },
+
     devtools: {
         enabled: true,
 
