@@ -285,5 +285,9 @@ svg {
         font-size: 10px;
         fill: #007bff;
     }
+
+    .link {
+        fill: #555;
+    }
 }
 </style>
