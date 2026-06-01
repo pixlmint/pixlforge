@@ -1,7 +1,5 @@
 <template>
-    <a :href="`https://git.pixlmint.ch/${owner}/${repo}`"
-        >{{ owner }}/{{ repo }}</a
-    >
+    <a :href="`https://git.pixlmint.ch/${owner}/${repo}`">{{ owner }}/{{ repo }}</a>
 
     <h2>Branches</h2>
     <ul>
@@ -48,11 +46,7 @@
         </tbody>
     </table>
     <div class="commit-graph">
-        <repo-graph-entry
-            v-for="(commit, _) in commits"
-            :key="commit.sha"
-            :commit="commit"
-        />
+        <repo-graph-entry v-for="(commit, _) in commits" :key="commit.sha" :commit="commit" />
     </div>
 </template>
 
