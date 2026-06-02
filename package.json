@@ -5,6 +5,8 @@
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
+    "debug": "NODE_OPTIONS='--inspect=9229' nuxt dev",
+    "test": "jest",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare && npx simple-git-hooks"
@@ -30,10 +32,14 @@
     "@hey-api/client-fetch": "^0.13.1",
     "@hey-api/openapi-ts": "^0.97.2",
     "@types/d3": "^7.4.3",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.4.2",
     "lint-staged": "^17.0.6",
     "prettier": "^3.8.3",
     "sass": "^1.100.0",
     "simple-git-hooks": "^2.13.1",
+    "ts-jest": "^29.4.11",
+    "typescript": "^5.9.3",
     "vue-json-pretty": "^2.6.0"
   }
 }
