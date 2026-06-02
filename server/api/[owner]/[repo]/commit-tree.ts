@@ -77,6 +77,7 @@ export default defineCachedEventHandler(
             .sort((a, b) => {
                 return Temporal.Instant.compare(a.timestamp, b.timestamp)
             })
+            .reverse()
 
         return {
             branches: branches.data!,
@@ -86,6 +87,6 @@ export default defineCachedEventHandler(
     {
         maxAge: 60 * 60 * 5,
         getKey: (event: H3Event) =>
-            `commits_${event.context.params!.owner}_${event.context.params!.repo}_v2`,
+            `commits_${event.context.params!.owner}_${event.context.params!.repo}_v3`,
     },
 )
