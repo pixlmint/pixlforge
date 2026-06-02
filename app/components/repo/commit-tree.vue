@@ -47,9 +47,13 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="(commit, _) in commits" :key="commit.sha">
+                <tr
+                    v-for="(commit, _) in commits"
+                    :key="commit.sha"
+                    :class="{ active: viewingCommit !== null && viewingCommit.sha === commit.sha }"
+                >
                     <td v-for="(branch, index) in branches" :key="index">
-                        <span v-if="commit.branchNames.includes(branch.name!)">
+                        <span v-if="commit.sourceBranch === branch.name!">
                             <template v-if="commit.isMerge"> \ </template>
                             <template v-else> * </template>
                         </span>
@@ -285,6 +289,10 @@ const buildMermaidGitGraph = (data: HistoryCommit[]): string[] => {
             position: sticky;
             top: 0;
             background-color: black;
+        }
+
+        tr.active td {
+            background-color: #222;
         }
 
         th.rotate {

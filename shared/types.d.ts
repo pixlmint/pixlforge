@@ -4,7 +4,9 @@ export type HistoryCommit = {
     timestamp: Temporal.Instant
     author: string
     parents: CommitMeta[]
+    children: CommitMeta[]
     branchNames: string[]
+    sourceBranch?: string
     isMerge: boolean
     headOf?: string
 }
