@@ -1,3 +1,9 @@
+export type CommitLane = {
+    id: string
+    name?: string
+    isVirtualBranch: boolean
+}
+
 export type HistoryCommit = {
     sha: string
     message: string
@@ -9,4 +15,5 @@ export type HistoryCommit = {
     sourceBranch?: string
     isMerge: boolean
     headOf?: string
+    lane?: CommitLane
 }

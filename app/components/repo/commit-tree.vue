@@ -38,9 +38,9 @@
         <table class="commit-list">
             <thead>
                 <tr>
-                    <th class="rotate" v-for="(branch, index) in branches" :key="index">
+                    <th class="rotate" v-for="[id, _] of lanes" :key="id">
                         <div>
-                            <span>{{ branch.name }}</span>
+                            <!-- <span>{{ id }}</span> -->
                         </div>
                     </th>
                     <th>info</th>
@@ -52,8 +52,8 @@
                     :key="commit.sha"
                     :class="{ active: viewingCommit !== null && viewingCommit.sha === commit.sha }"
                 >
-                    <td v-for="(branch, index) in branches" :key="index">
-                        <span v-if="commit.sourceBranch === branch.name!">
+                    <td v-for="[id, _] in lanes" :key="id">
+                        <span v-if="commit.lane?.id === id">
                             <template v-if="commit.isMerge"> \ </template>
                             <template v-else> * </template>
                         </span>
@@ -86,11 +86,19 @@
 <script lang="ts" setup>
 import VueJsonPretty from 'vue-json-pretty'
 import * as d3 from 'd3'
-import type { HistoryCommit } from '~~/shared/types'
+import type { CommitLane, HistoryCommit } from '~~/shared/types'
 
 const { owner, repo } = defineProps<{ owner: string; repo: string }>()
 
 const { branches, commits } = (await useFetch(`/api/${owner}/${repo}/commit-tree`)).data!.value!
+
+const lanes = new Map<string, CommitLane>()
+
+commits.forEach((commit) => {
+    if (commit.lane !== undefined && !lanes.has(commit.lane.id)) {
+        lanes.set(commit.lane.id, commit.lane)
+    }
+})
 
 const graph = ref(null)
 
@@ -295,23 +303,23 @@ const buildMermaidGitGraph = (data: HistoryCommit[]): string[] => {
             background-color: #222;
         }
 
-        th.rotate {
-            /* Something you can count on */
-            height: 250px;
-            white-space: nowrap;
-        }
-
-        th.rotate > div {
-            transform:
-                /* Magic Numbers */ translate(0px, 105px)
-                /* 45 is really 360 - 45 */ rotate(270deg);
-            width: 30px;
-        }
-
-        th.rotate > div > span {
-            border-bottom: 1px solid #ccc;
-            padding: 5px 10px;
-        }
+        // th.rotate {
+        //     /* Something you can count on */
+        //     height: 250px;
+        //     white-space: nowrap;
+        // }
+        //
+        // th.rotate > div {
+        //     transform:
+        //         /* Magic Numbers */ translate(0px, 105px)
+        //         /* 45 is really 360 - 45 */ rotate(270deg);
+        //     width: 30px;
+        // }
+        //
+        // th.rotate > div > span {
+        //     border-bottom: 1px solid #ccc;
+        //     padding: 5px 10px;
+        // }
     }
 
     .commit-detail {

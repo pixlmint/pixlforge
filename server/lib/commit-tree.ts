@@ -1,7 +1,7 @@
 import { repoGetAllCommits, repoListBranches } from '~~/lib/generated'
 import { Temporal } from '@js-temporal/polyfill'
 import type { H3Event } from 'h3'
-import type { HistoryCommit } from '~~/shared/types'
+import type { CommitLane, HistoryCommit } from '~~/shared/types'
 import type { Commit, CommitMeta } from '~~/lib/generated'
 
 const historyCommitToCommitMeta = (commit: HistoryCommit): CommitMeta => {
@@ -54,67 +54,6 @@ const getFirstChildOfSameBranch = (
     console.error(`Unable to find child of same branch for ${parentCommit.sha}`)
 }
 
-const determineSourceBranch = (
-    commit: HistoryCommit,
-    commitMap: Map<string, HistoryCommit>,
-): void => {
-    if (commit.sourceBranch !== undefined) {
-        return
-    }
-
-    if (commit.branchNames.length === 1) {
-        commit.sourceBranch = commit.branchNames[0]
-        return
-    }
-
-    if (commit.parents.length === 0) {
-        // we found the very first commit
-        commit.sourceBranch = commit.branchNames.includes('main')
-            ? 'main'
-            : commit.branchNames.includes('master')
-              ? 'master'
-              : commit.branchNames[0]
-        return
-    }
-
-    const parents = commit.parents.map((parentMeta) => commitMap.get(parentMeta.sha))
-    const helperMap = new Map<Temporal.Instant, string>()
-
-    for (const parent of parents) {
-        if (parent === undefined) {
-            console.error(`Parent of ${commit.sha} is undefined`, commit, parents)
-            continue
-        }
-
-        if (parent.sourceBranch === undefined) {
-            determineSourceBranch(parent, commitMap)
-            if (parent.sourceBranch === undefined) {
-                console.error(
-                    `Unable to determine source branch for ${parent.sha} (branchNames: ${parent.branchNames})`,
-                )
-                continue
-            }
-        }
-
-        helperMap.set(parent.timestamp, parent.sourceBranch)
-    }
-
-    console.log(helperMap)
-
-    const sortedDates = helperMap
-        .keys()
-        .toArray()
-        .sort((a, b) => Temporal.Instant.compare(a, b))
-
-    if (sortedDates.length === 0) {
-        console.error("No viable branches found? I don't know how this could even happen", commit)
-    }
-
-    const earliestDate = sortedDates[0]!
-
-    commit.sourceBranch = helperMap.get(earliestDate)
-}
-
 const linkChildren = (commitMap: Map<string, HistoryCommit>) => {
     commitMap.forEach((commit, sha) => {
         commit.parents.forEach((parentMeta) => {
@@ -138,11 +77,6 @@ const buildCommitMap = (
     }[],
 ): Map<string, HistoryCommit> => {
     const commitMap = new Map<string, HistoryCommit>()
-    // const headCommits = new Map<string, string>()
-
-    // branches.data!.forEach((branch) => {
-    //     headCommits.set(branch.commit!.id!, branch.name!)
-    // })
 
     // Build Commit Map
     branchCommits.forEach((branch) => {
@@ -165,9 +99,6 @@ const buildCommitMap = (
                     isMerge: (commit.parents || []).length > 1,
                     message: commitMessage,
                 }
-                // if (headCommits.has(commitSha)) {
-                //     historyCommit.headOf = headCommits.get(commitSha)!
-                // }
                 commitMap.set(commitSha, historyCommit)
             }
             const node = commitMap.get(commitSha)!
@@ -207,6 +138,18 @@ export const buildCommitGraph = async (event: H3Event) => {
 
     const commitMap = buildCommitMap(branchCommits)
 
+    branches.data!.forEach((branch) => {
+        if (branch.commit === undefined) {
+            return
+        }
+
+        const head = commitMap.get(branch.commit!.id!)
+
+        if (head !== undefined) {
+            head.headOf = branch.name!
+        }
+    })
+
     linkChildren(commitMap)
 
     // map -> array, sort
@@ -218,29 +161,99 @@ export const buildCommitGraph = async (event: H3Event) => {
         })
         .reverse()
 
-    commits.forEach((commit) => {
-        if (commit.branchNames.length === 1) {
-            commit.sourceBranch = commit.branchNames[0]
+    const lanes = new Map<string, CommitLane>()
+
+    const getOrCreateBranchLane = (name: string): CommitLane => {
+        if (!lanes.has(name)) {
+            lanes.set(name, {
+                id: name,
+                name: name,
+                isVirtualBranch: false,
+            })
         }
-    })
 
-    // assign source branch for each commit
+        return lanes.get(name)!
+    }
+
+    const createNewLane = (): CommitLane => {
+        const lane: CommitLane = {
+            id: 'virtual_' + lanes.size.toString(),
+            isVirtualBranch: true,
+        }
+
+        lanes.set(lane.id, lane)
+
+        return lane
+    }
+
+    // assign commit lanes
     commits.forEach((commit) => {
-        determineSourceBranch(commit, commitMap)
-        if (commit.isMerge) {
-            const parent = getParentFromSameBranch(commit, commitMap)
+        if (commit.lane !== undefined) {
+            return
+        } else if (commit.branchNames.length === 0) {
+            commit.lane = {
+                id: 'no-branch',
+                name: 'no-branch',
+                isVirtualBranch: false,
+            }
+        } else if (commit.branchNames.length === 1) {
+            commit.lane = getOrCreateBranchLane(commit.branchNames[0]!)
+        } else if (commit.headOf !== undefined) {
+            commit.lane = getOrCreateBranchLane(commit.headOf)
+        } else if (commit.children.length === 1) {
+            const childCommit = commitMap.get(commit.children[0]!.sha)!
 
-            if (parent !== undefined && parent.children.length > 0) {
-                determineSourceBranch(parent, commitMap)
-                const firstChild = getFirstChildOfSameBranch(parent, commitMap)
+            if (childCommit.parents.length === 1) {
+                commit.lane = childCommit.lane
+            } else if (childCommit.parents.length > 1) {
+                const siblingCommitSha =
+                    childCommit.parents[0]!.sha === commit.sha
+                        ? childCommit.parents[1]!.sha
+                        : childCommit.parents[0]!.sha
 
-                if (firstChild !== undefined) {
-                    let child = firstChild
-                    while (child.sha !== commit.sha) {
-                        child.sourceBranch = commit.sourceBranch
-                        child = getFirstChildOfSameBranch(child, commitMap)!
-                    }
+                const siblingCommit = commitMap.get(siblingCommitSha)
+
+                if (siblingCommit === undefined) {
+                    return
                 }
+
+                if (Temporal.Instant.compare(commit.timestamp, siblingCommit.timestamp) < 0) {
+                    commit.lane = childCommit.lane
+                } else {
+                    commit.lane = createNewLane()
+                }
+            } else {
+                commit.lane = createNewLane()
+            }
+        } else if (commit.children.length === 2) {
+            const firstChild = commitMap.get(commit.children[0]!.sha)!
+            const secondChild = commitMap.get(commit.children[1]!.sha)!
+
+            const nonMergeCommit = firstChild.parents.length > 1 ? secondChild : firstChild
+            commit.lane = nonMergeCommit.lane
+        } else if (commit.children.length > 2) {
+            const candidates: HistoryCommit[] = commit.children
+                .map((childMeta) => commitMap.get(childMeta.sha))
+                .filter((commit) => commit !== undefined && !commit.isMerge) as HistoryCommit[]
+            const commitBranches = new Set<string>(commit.branchNames)
+            const badCandidates: string[] = []
+
+            candidates.forEach((candidate) => {
+                const candidateBranches = new Set<string>(candidate.branchNames)
+
+                if (candidateBranches.difference(commitBranches).size > 0) {
+                    badCandidates.push(candidate.sha)
+                }
+            })
+
+            const cleanedCandidates = candidates.filter(
+                (candidate) => !badCandidates.includes(candidate.sha),
+            )
+
+            console.log(cleanedCandidates)
+
+            if (cleanedCandidates.length === 1) {
+                commit.lane = cleanedCandidates[0]!.lane
             }
         }
     })
@@ -254,7 +267,6 @@ export const buildCommitGraph = async (event: H3Event) => {
 export const testHelpers = {
     getParentFromSameBranch,
     getFirstChildOfSameBranch,
-    determineSourceBranch,
     buildCommitGraph,
     linkChildren,
     buildCommitMap,
