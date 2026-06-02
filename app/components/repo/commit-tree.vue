@@ -17,42 +17,63 @@
         </li>
     </ul>
 
-    <VueJsonPretty :data="branchCommits[0]!.commits[0]" />
+    <details>
+        <summary>commit example</summary>
+        <!-- <VueJsonPretty :data="branchCommits[0]!.commits[0]" /> -->
+    </details>
 
     <h2>Commits</h2>
 
-    <h3>Mermaid</h3>
-    <pre>{{ mermaidGitGraph }}</pre>
-    <repo-mermaid-diagram :value="mermaidGitGraph" />
-    <!-- <div v-if="mermaidGraph !== null">{{ mermaidGraph }}</div> -->
-    <h3>SVG</h3>
-    <svg ref="graph"></svg>
+    <!-- <details> -->
+    <!--     <summary>mermaid</summary> -->
+    <!--     <pre>{{ mermaidGitGraph }}</pre> -->
+    <!--     <repo-mermaid-diagram :value="mermaidGitGraph" /> -->
+    <!-- </details> -->
+    <!-- <details> -->
+    <!--     <summary>SVG</summary> -->
+    <!--     <svg ref="graph"></svg> -->
+    <!-- </details> -->
 
-    <table>
-        <thead>
-            <tr>
-                <th v-for="(branch, index) in branches.data!" :key="index">
-                    {{ branch.name }}
-                </th>
-                <th>info</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="(commit, _) in commits" :key="commit.sha">
-                <td v-for="(branch, index) in branches.data!" :key="index">
-                    <span v-if="commit.branchNames.includes(branch.name!)">
-                        <template v-if="commit.isMerge"> \ </template>
-                        <template v-else> * </template>
-                    </span>
-                    <span v-else> | </span>
-                </td>
-                <td>
-                    {{ commit.sha }}
-                    {{ commit.message }}
-                </td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="commit-list-split">
+        <table class="commit-list">
+            <thead>
+                <tr>
+                    <th class="rotate" v-for="(branch, index) in branches" :key="index">
+                        <div>
+                            <span>{{ branch.name }}</span>
+                        </div>
+                    </th>
+                    <th>info</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(commit, _) in commits" :key="commit.sha">
+                    <td v-for="(branch, index) in branches" :key="index">
+                        <span v-if="commit.branchNames.includes(branch.name!)">
+                            <template v-if="commit.isMerge"> \ </template>
+                            <template v-else> * </template>
+                        </span>
+                        <span v-else> | </span>
+                    </td>
+                    <td class="commit-info" @click="viewingCommit = commit">
+                        <span class="commit-sha">{{ commit.sha.substring(0, 7) }}</span>
+                        <span class="commit-message">{{ commit.message.split('\n')[0]! }}</span>
+                        <span class="commit-date">
+                            <!-- <timeago :date="commit.timestamp" /> -->
+                        </span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="commit-detail">
+            <vue-json-pretty
+                class="commit-detail-content"
+                v-if="viewingCommit !== null"
+                :data="viewingCommit"
+            />
+        </div>
+    </div>
     <div class="commit-graph">
         <repo-graph-entry v-for="(commit, _) in commits" :key="commit.sha" :commit="commit" />
     </div>
@@ -60,86 +81,16 @@
 
 <script lang="ts" setup>
 import VueJsonPretty from 'vue-json-pretty'
-import { repoListBranches, repoGetAllCommits } from '~~/lib/generated'
-import { Temporal } from '@js-temporal/polyfill'
 import * as d3 from 'd3'
-import type { HistoryCommit } from '~/types'
+import type { HistoryCommit } from '~~/shared/types'
 
 const { owner, repo } = defineProps<{ owner: string; repo: string }>()
 
+const { branches, commits } = (await useFetch(`/api/${owner}/${repo}/commit-tree`)).data!.value!
+
 const graph = ref(null)
 
-const branches = await repoListBranches({ path: { owner: owner, repo: repo } })
-
-const commitsPromises = branches.data!.map(async (branch) => {
-    const branchCommits = await repoGetAllCommits({
-        path: {
-            owner: owner,
-            repo: repo,
-        },
-        query: {
-            sha: branch.name!,
-            limit: 2000,
-        },
-    })
-
-    return {
-        branch: branch.name!,
-        commits: branchCommits.data!,
-    }
-})
-
-const branchCommits = await Promise.all(commitsPromises)
-
-const commitMap = new Map<string, HistoryCommit>()
-const headCommits = new Map<string, string>()
-
-branches.data!.forEach((branch) => {
-    headCommits.set(branch.commit!.id!, branch.name!)
-})
-
-branchCommits.forEach((branch) => {
-    branch.commits.forEach((commit) => {
-        const commitSha = commit.sha!
-        if (!commitMap.has(commitSha)) {
-            let commitMessage
-            if (
-                commit.commit === undefined ||
-                commit.commit.message === undefined ||
-                commit.commit.message === null
-            ) {
-                commitMessage = '<empty>'
-            } else {
-                commitMessage = commit.commit.message
-            }
-            const historyCommit: HistoryCommit = {
-                sha: commitSha,
-                author: commit.committer?.login || '<empty>',
-                parents: commit.parents || [],
-                timestamp: Temporal.Instant.from(commit.created!),
-                branchNames: [],
-                isMerge: (commit.parents || []).length > 1,
-                message: commitMessage,
-            }
-            if (headCommits.has(commitSha)) {
-                historyCommit.headOf = headCommits.get(commitSha)!
-            }
-            commitMap.set(commitSha, historyCommit)
-        }
-        const node = commitMap.get(commitSha)!
-        if (!node.branchNames.includes(branch.branch)) {
-            node.branchNames.push(branch.branch)
-        }
-    })
-})
-
-const commits = commitMap
-    .values()
-    .toArray()
-    .sort((a, b) => {
-        return Temporal.Instant.compare(a.timestamp, b.timestamp)
-    })
-    .reverse()
+const viewingCommit = ref<HistoryCommit | null>(null)
 
 type Point = {
     x: number
@@ -296,7 +247,7 @@ const buildMermaidGitGraph = (data: HistoryCommit[]): string[] => {
     return [...gitGraph, ...gitActions.map((row) => `    ${row}`)]
 }
 
-const mermaidGitGraph = buildMermaidGitGraph(commits).join('\n')
+// const mermaidGitGraph = buildMermaidGitGraph(commits).join('\n')
 
 // onMounted(() => {
 //     renderGitGraph(commits)
@@ -304,13 +255,65 @@ const mermaidGitGraph = buildMermaidGitGraph(commits).join('\n')
 </script>
 
 <style lang="scss">
-.commit-list {
-    display: flex;
-}
+// .commit-list {
+//     display: flex;
+// }
 
 .commit-graph {
     display: grid;
     grid-template-columns: 20px auto;
+}
+
+.commit-list-split {
+    display: flex;
+
+    table.commit-list {
+        width: 75%;
+
+        .commit-info {
+            span {
+                margin: 0 5px;
+            }
+
+            .commit-sha,
+            .commit-date {
+                color: var(--color-secondary);
+            }
+        }
+
+        th {
+            position: sticky;
+            top: 0;
+            background-color: black;
+        }
+
+        th.rotate {
+            /* Something you can count on */
+            height: 250px;
+            white-space: nowrap;
+        }
+
+        th.rotate > div {
+            transform:
+                /* Magic Numbers */ translate(0px, 105px)
+                /* 45 is really 360 - 45 */ rotate(270deg);
+            width: 30px;
+        }
+
+        th.rotate > div > span {
+            border-bottom: 1px solid #ccc;
+            padding: 5px 10px;
+        }
+    }
+
+    .commit-detail {
+        width: 25%;
+
+        .commit-detail-content {
+            position: sticky;
+            top: 0;
+        }
+    }
 }
 
 svg {
