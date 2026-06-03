@@ -2,7 +2,50 @@ import { repoGetAllCommits, repoListBranches } from '~~/lib/generated'
 import { Temporal } from '@js-temporal/polyfill'
 import type { H3Event } from 'h3'
 import type { CommitLane, HistoryCommit } from '~~/shared/types'
-import type { Commit, CommitMeta, Branch } from '~~/lib/generated'
+import type { Commit as ForgejoCommit, CommitMeta, Branch as ForgejoBranch } from '~~/lib/generated'
+
+class GitGraph {
+    public readonly branches: Branch[] = []
+}
+
+class Commit {
+    public readonly sha: string
+    public readonly message: string
+    public readonly timesatmp: Temporal.Instant
+    public readonly parents: Commit[] = []
+    public readonly children: Commit[] = []
+
+    constructor(sha: string, message: string, timestamp: Temporal.Instant) {
+        this.sha = sha
+        this.message = message
+        this.timesatmp = timestamp
+    }
+}
+
+class MergeCommit extends Commit {
+    public readonly sourceA: Commit
+    public readonly sourceB: Commit
+
+    constructor(
+        sha: string,
+        message: string,
+        timestamp: Temporal.Instant,
+        sourceA: Commit,
+        sourceB: Commit,
+    ) {
+        super(sha, message, timestamp)
+        this.sourceA = sourceA
+        this.sourceB = sourceB
+    }
+}
+
+class Branch {
+    public readonly head: Commit
+
+    constructor(head: Commit) {
+        this.head = head
+    }
+}
 
 const historyCommitToCommitMeta = (commit: HistoryCommit): CommitMeta => {
     return {
@@ -73,7 +116,7 @@ const linkChildren = (commitMap: Map<string, HistoryCommit>) => {
 const buildCommitMap = (
     branchCommits: {
         branch: string
-        commits: Commit[]
+        commits: ForgejoCommit[]
     }[],
 ): Map<string, HistoryCommit> => {
     const commitMap = new Map<string, HistoryCommit>()
@@ -184,7 +227,7 @@ const recursiveAssignLanes = (
 
 const assignLanes = (
     commitMap: Map<string, HistoryCommit>,
-    branches: Branch[],
+    branches: ForgejoBranch[],
 ): HistoryCommit[] => {
     // map -> array, sort
     const commits = commitMap
