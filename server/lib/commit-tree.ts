@@ -217,6 +217,101 @@ const assignLanes = (
     return commits
 }
 
+/**
+ * Generates a text-based graph similar to `git log --graph`
+ */
+const generateGitGraph = (sortedCommits: HistoryCommit[]): string => {
+    if (sortedCommits.length === 0) return ''
+
+    // 2. Create a lookup map for quick access
+    const commitMap = new Map<string, HistoryCommit>()
+    sortedCommits.forEach((c) => commitMap.set(c.sha, c))
+
+    // 3. Track "active" branch paths.
+    // Each entry represents a vertical line currently being drawn.
+    // We store the SHA of the "current" tip of that line.
+    let activeTracks: string[] = []
+    const output: string[] = []
+
+    for (const commit of sortedCommits) {
+        let prefix = ''
+        let branchLabels =
+            commit.branchNames.length > 0 ? `(${commit.branchNames.join(', ')}) ` : ''
+
+        // Determine if this commit is part of any existing active tracks
+        const trackIndex = activeTracks.indexOf(commit.sha)
+
+        if (trackIndex !== -1) {
+            // This commit is a continuation of an existing track
+            // Fill preceding tracks with '|'
+            for (let i = 0; i < trackIndex; i++) {
+                prefix += '| '
+            }
+
+            prefix += '* '
+
+            if (commit.isMerge && commit.parents.length > 1) {
+                // If it's a merge, we are adding a second parent track
+                // We use '/' to show the convergence
+                prefix += '/ '
+                // Add the second parent to our active tracks to continue drawing it
+                activeTracks.push(commit.parents[1])
+            } else {
+                // If not a merge, we just continue the current track with a pipe
+                prefix += '| '
+            }
+        } else {
+            // This commit is a new branch appearing (it wasn't in our active tracks)
+            // Fill existing tracks with '|'
+            for (let i = 0; i < activeTracks.length; i++) {
+                prefix += '| '
+            }
+            prefix += '* '
+
+            // If this is a merge, we still need to add the second parent track
+            if (commit.isMerge && commit.parents.length > 1) {
+                prefix += '/ '
+                activeTracks.push(commit.parents[1])
+            } else {
+                prefix += '| '
+            }
+            // Add the primary parent to tracks
+            activeTracks.push(commit.sha)
+        }
+
+        // 4. Handle "Closing" tracks
+        // If the current commit's primary parent is NOT in the future (older) commits,
+        // the track must "end" with a '\' in the next iteration.
+        // We check if the current commit's main parent is still 'active' in the next step.
+        const primaryParent = commit.parents[0]
+
+        // Check if the primary parent exists in the remaining commits
+        const parentExistsLater = sortedCommits.some(
+            (c) =>
+                c.sha === primaryParent && sortedCommits.indexOf(c) > sortedCommits.indexOf(commit),
+        )
+
+        // For simplicity in this implementation, we update the prefix of the
+        // CURRENT line if we are about to terminate a track.
+        // (Note: A production implementation would use a second pass or a buffer)
+
+        // 5. Prepare the line
+        const line = `${prefix}${branchLabels}${commit.message} (${commit.sha.substring(0, 7)})`
+        output.push(line)
+
+        // 6. Update tracks: Remove the current commit from tracks
+        // because we are moving to the next (older) commit.
+        // If the parent isn't part of the 'active' set, the track effectively dies.
+        activeTracks = activeTracks.filter((sha) => sha === commit.sha || commitMap.has(sha))
+
+        // Cleanup: If a track's SHA is no longer appearing in the sorted list,
+        // the next time we print a '|', we should actually print '\'
+        // (Simplified for this example)
+    }
+
+    return output.join('\n')
+}
+
 export const buildCommitGraph = async (event: H3Event) => {
     const repo = event.context.params!.repo!
     const owner = event.context.params!.owner!
@@ -259,6 +354,10 @@ export const buildCommitGraph = async (event: H3Event) => {
     linkChildren(commitMap)
 
     const commits = assignLanes(commitMap, branches.data!)
+
+    const graph = generateGitGraph(commits)
+
+    console.log(graph)
 
     // map -> array, sort
     // const commits = commitMap
