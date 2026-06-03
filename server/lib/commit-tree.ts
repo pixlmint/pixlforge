@@ -111,6 +111,79 @@ const buildCommitMap = (
     return commitMap
 }
 
+const getOrCreateBranchLane = (name: string, lanes: Map<string, CommitLane>): CommitLane => {
+    if (!lanes.has(name)) {
+        lanes.set(name, {
+            id: name,
+            name: name,
+            isVirtualBranch: false,
+        })
+    }
+
+    return lanes.get(name)!
+}
+
+const recursiveAssignLanes = (
+    currentCommit: HistoryCommit,
+    commitMap: Map<string, HistoryCommit>,
+    lanes: Map<string, CommitLane>,
+): void => {
+    if (currentCommit.headOf !== undefined) {
+        currentCommit.lane = getOrCreateBranchLane(currentCommit.headOf, lanes)
+    } else if (currentCommit.branchNames.length === 1) {
+        currentCommit.lane = getOrCreateBranchLane(currentCommit.branchNames[0]!, lanes)
+    } else if (currentCommit.children.length === 1) {
+        const child = commitMap.get(currentCommit.children[0]!.sha)
+
+        if (child !== undefined && child.lane !== undefined) {
+            currentCommit.lane = child.lane
+        }
+    }
+
+    if (currentCommit.children.length > 0) {
+        for (const childMeta of currentCommit.children) {
+            const child = commitMap.get(childMeta.sha)
+
+            if (child !== undefined && child.lane === undefined) {
+                recursiveAssignLanes(child, commitMap, lanes)
+            }
+        }
+    }
+
+    if (currentCommit.parents.length > 0) {
+        for (const parentMeta of currentCommit.parents) {
+            const parent = commitMap.get(parentMeta.sha)
+            if (parent !== undefined) {
+                if (currentCommit.parents.length === 1) {
+                    if (currentCommit.lane !== undefined) {
+                        parent.lane = currentCommit.lane
+                    }
+                    recursiveAssignLanes(parent, commitMap, lanes)
+                } else if (parent.lane === undefined) {
+                    recursiveAssignLanes(parent, commitMap, lanes)
+                }
+            }
+        }
+    }
+}
+
+const assignLanes = (commitMap: Map<string, HistoryCommit>): HistoryCommit[] => {
+    // map -> array, sort
+    const commits = commitMap
+        .values()
+        .toArray()
+        .sort((a, b) => {
+            return Temporal.Instant.compare(a.timestamp, b.timestamp)
+        })
+        .reverse()
+
+    const lanes = new Map<string, CommitLane>()
+
+    recursiveAssignLanes(commits[0]!, commitMap, lanes)
+
+    return commits
+}
+
 export const buildCommitGraph = async (event: H3Event) => {
     const repo = event.context.params!.repo!
     const owner = event.context.params!.owner!
@@ -152,111 +225,113 @@ export const buildCommitGraph = async (event: H3Event) => {
 
     linkChildren(commitMap)
 
+    const commits = assignLanes(commitMap)
+
     // map -> array, sort
-    const commits = commitMap
-        .values()
-        .toArray()
-        .sort((a, b) => {
-            return Temporal.Instant.compare(a.timestamp, b.timestamp)
-        })
-        .reverse()
-
-    const lanes = new Map<string, CommitLane>()
-
-    const getOrCreateBranchLane = (name: string): CommitLane => {
-        if (!lanes.has(name)) {
-            lanes.set(name, {
-                id: name,
-                name: name,
-                isVirtualBranch: false,
-            })
-        }
-
-        return lanes.get(name)!
-    }
-
-    const createNewLane = (): CommitLane => {
-        const lane: CommitLane = {
-            id: 'virtual_' + lanes.size.toString(),
-            isVirtualBranch: true,
-        }
-
-        lanes.set(lane.id, lane)
-
-        return lane
-    }
-
-    // assign commit lanes
-    commits.forEach((commit) => {
-        if (commit.lane !== undefined) {
-            return
-        } else if (commit.branchNames.length === 0) {
-            commit.lane = {
-                id: 'no-branch',
-                name: 'no-branch',
-                isVirtualBranch: false,
-            }
-        } else if (commit.branchNames.length === 1) {
-            commit.lane = getOrCreateBranchLane(commit.branchNames[0]!)
-        } else if (commit.headOf !== undefined) {
-            commit.lane = getOrCreateBranchLane(commit.headOf)
-        } else if (commit.children.length === 1) {
-            const childCommit = commitMap.get(commit.children[0]!.sha)!
-
-            if (childCommit.parents.length === 1) {
-                commit.lane = childCommit.lane
-            } else if (childCommit.parents.length > 1) {
-                const siblingCommitSha =
-                    childCommit.parents[0]!.sha === commit.sha
-                        ? childCommit.parents[1]!.sha
-                        : childCommit.parents[0]!.sha
-
-                const siblingCommit = commitMap.get(siblingCommitSha)
-
-                if (siblingCommit === undefined) {
-                    return
-                }
-
-                if (Temporal.Instant.compare(commit.timestamp, siblingCommit.timestamp) < 0) {
-                    commit.lane = childCommit.lane
-                } else {
-                    commit.lane = createNewLane()
-                }
-            } else {
-                commit.lane = createNewLane()
-            }
-        } else if (commit.children.length === 2) {
-            const firstChild = commitMap.get(commit.children[0]!.sha)!
-            const secondChild = commitMap.get(commit.children[1]!.sha)!
-
-            const nonMergeCommit = firstChild.parents.length > 1 ? secondChild : firstChild
-            commit.lane = nonMergeCommit.lane
-        } else if (commit.children.length > 2) {
-            const candidates: HistoryCommit[] = commit.children
-                .map((childMeta) => commitMap.get(childMeta.sha))
-                .filter((commit) => commit !== undefined && !commit.isMerge) as HistoryCommit[]
-            const commitBranches = new Set<string>(commit.branchNames)
-            const badCandidates: string[] = []
-
-            candidates.forEach((candidate) => {
-                const candidateBranches = new Set<string>(candidate.branchNames)
-
-                if (candidateBranches.difference(commitBranches).size > 0) {
-                    badCandidates.push(candidate.sha)
-                }
-            })
-
-            const cleanedCandidates = candidates.filter(
-                (candidate) => !badCandidates.includes(candidate.sha),
-            )
-
-            console.log(cleanedCandidates)
-
-            if (cleanedCandidates.length === 1) {
-                commit.lane = cleanedCandidates[0]!.lane
-            }
-        }
-    })
+    // const commits = commitMap
+    //     .values()
+    //     .toArray()
+    //     .sort((a, b) => {
+    //         return Temporal.Instant.compare(a.timestamp, b.timestamp)
+    //     })
+    //     .reverse()
+    //
+    // const lanes = new Map<string, CommitLane>()
+    //
+    // const getOrCreateBranchLane = (name: string): CommitLane => {
+    //     if (!lanes.has(name)) {
+    //         lanes.set(name, {
+    //             id: name,
+    //             name: name,
+    //             isVirtualBranch: false,
+    //         })
+    //     }
+    //
+    //     return lanes.get(name)!
+    // }
+    //
+    // const createNewLane = (): CommitLane => {
+    //     const lane: CommitLane = {
+    //         id: 'virtual_' + lanes.size.toString(),
+    //         isVirtualBranch: true,
+    //     }
+    //
+    //     lanes.set(lane.id, lane)
+    //
+    //     return lane
+    // }
+    //
+    // // assign commit lanes
+    // commits.forEach((commit) => {
+    //     if (commit.lane !== undefined) {
+    //         return
+    //     } else if (commit.branchNames.length === 0) {
+    //         commit.lane = {
+    //             id: 'no-branch',
+    //             name: 'no-branch',
+    //             isVirtualBranch: false,
+    //         }
+    //     } else if (commit.branchNames.length === 1) {
+    //         commit.lane = getOrCreateBranchLane(commit.branchNames[0]!)
+    //     } else if (commit.headOf !== undefined) {
+    //         commit.lane = getOrCreateBranchLane(commit.headOf)
+    //     } else if (commit.children.length === 1) {
+    //         const childCommit = commitMap.get(commit.children[0]!.sha)!
+    //
+    //         if (childCommit.parents.length === 1) {
+    //             commit.lane = childCommit.lane
+    //         } else if (childCommit.parents.length > 1) {
+    //             const siblingCommitSha =
+    //                 childCommit.parents[0]!.sha === commit.sha
+    //                     ? childCommit.parents[1]!.sha
+    //                     : childCommit.parents[0]!.sha
+    //
+    //             const siblingCommit = commitMap.get(siblingCommitSha)
+    //
+    //             if (siblingCommit === undefined) {
+    //                 return
+    //             }
+    //
+    //             if (Temporal.Instant.compare(commit.timestamp, siblingCommit.timestamp) < 0) {
+    //                 commit.lane = childCommit.lane
+    //             } else {
+    //                 commit.lane = createNewLane()
+    //             }
+    //         } else {
+    //             commit.lane = createNewLane()
+    //         }
+    //     } else if (commit.children.length === 2) {
+    //         const firstChild = commitMap.get(commit.children[0]!.sha)!
+    //         const secondChild = commitMap.get(commit.children[1]!.sha)!
+    //
+    //         const nonMergeCommit = firstChild.parents.length > 1 ? secondChild : firstChild
+    //         commit.lane = nonMergeCommit.lane
+    //     } else if (commit.children.length > 2) {
+    //         const candidates: HistoryCommit[] = commit.children
+    //             .map((childMeta) => commitMap.get(childMeta.sha))
+    //             .filter((commit) => commit !== undefined && !commit.isMerge) as HistoryCommit[]
+    //         const commitBranches = new Set<string>(commit.branchNames)
+    //         const badCandidates: string[] = []
+    //
+    //         candidates.forEach((candidate) => {
+    //             const candidateBranches = new Set<string>(candidate.branchNames)
+    //
+    //             if (candidateBranches.difference(commitBranches).size > 0) {
+    //                 badCandidates.push(candidate.sha)
+    //             }
+    //         })
+    //
+    //         const cleanedCandidates = candidates.filter(
+    //             (candidate) => !badCandidates.includes(candidate.sha),
+    //         )
+    //
+    //         console.log(cleanedCandidates)
+    //
+    //         if (cleanedCandidates.length === 1) {
+    //             commit.lane = cleanedCandidates[0]!.lane
+    //         }
+    //     }
+    // })
 
     return {
         branches: branches.data!,
