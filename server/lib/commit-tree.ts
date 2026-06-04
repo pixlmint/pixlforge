@@ -171,14 +171,7 @@ const assignLanes = (
     commitMap: Map<string, HistoryCommit>,
     branches: Branch[],
 ): HistoryCommit[] => {
-    // map -> array, sort
-    const commits = commitMap
-        .values()
-        .toArray()
-        .sort((a, b) => {
-            return Temporal.Instant.compare(a.timestamp, b.timestamp)
-        })
-        .reverse()
+    const commits = commitMap.values().toArray()
 
     const lanes = new Map<string, CommitLane>()
 
