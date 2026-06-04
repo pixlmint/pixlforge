@@ -38,7 +38,7 @@
         <table class="commit-list">
             <thead>
                 <tr>
-                    <th class="rotate" v-for="[id, _] of lanes" :key="id">
+                    <th class="rotate" v-for="(lane, _) in lanes" :key="lane">
                         <div>
                             <!-- <span>{{ id }}</span> -->
                         </div>
@@ -52,8 +52,8 @@
                     :key="commit.sha"
                     :class="{ active: viewingCommit !== null && viewingCommit.sha === commit.sha }"
                 >
-                    <td v-for="[id, _] in lanes" :key="id">
-                        <span v-if="commit.lane?.id === id">
+                    <td v-for="(lane, _) in lanes" :key="lane">
+                        <span v-if="commit.lane === lane">
                             <template v-if="commit.isMerge"> \ </template>
                             <template v-else> * </template>
                         </span>
@@ -92,11 +92,11 @@ const { owner, repo } = defineProps<{ owner: string; repo: string }>()
 
 const { branches, commits } = (await useFetch(`/api/${owner}/${repo}/commit-tree`)).data!.value!
 
-const lanes = new Map<string, CommitLane>()
+const lanes: number[] = []
 
 commits.forEach((commit) => {
-    if (commit.lane !== undefined && !lanes.has(commit.lane.id)) {
-        lanes.set(commit.lane.id, commit.lane)
+    if (commit.lane !== undefined && !lanes.includes(commit.lane)) {
+        lanes.push(commit.lane)
     }
 })
 

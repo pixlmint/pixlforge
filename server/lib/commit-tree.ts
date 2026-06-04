@@ -111,110 +111,178 @@ const buildCommitMap = (
     return commitMap
 }
 
-const findCommitsWithoutLane = (commits: HistoryCommit[]): HistoryCommit[] => {
-    return commits.filter((commit) => commit.lane === undefined)
-}
+// const findCommitsWithoutLane = (commits: HistoryCommit[]): HistoryCommit[] => {
+//     return commits.filter((commit) => commit.lane === undefined)
+// }
 
-const createNewLane = (lanes: Map<string, CommitLane>): CommitLane => {
-    const lane: CommitLane = {
-        id: 'virtual_' + lanes.size.toString(),
-        isVirtualBranch: true,
-    }
+// const createNewLane = (lanes: Map<string, CommitLane>): CommitLane => {
+//     const lane: CommitLane = {
+//         id: 'virtual_' + lanes.size.toString(),
+//         isVirtualBranch: true,
+//     }
+//
+//     lanes.set(lane.id, lane)
+//
+//     return lane
+// }
 
-    lanes.set(lane.id, lane)
-
-    return lane
-}
-
-const getOrCreateBranchLane = (name: string, lanes: Map<string, CommitLane>): CommitLane => {
-    if (!lanes.has(name)) {
-        lanes.set(name, {
-            id: name,
-            name: name,
-            isVirtualBranch: false,
-        })
-    }
-
-    return lanes.get(name)!
-}
-
-const recursiveAssignLanes = (
-    currentCommit: HistoryCommit,
-    commitMap: Map<string, HistoryCommit>,
-    lanes: Map<string, CommitLane>,
-): void => {
-    if (currentCommit.lane === undefined) {
-        if (currentCommit.headOf !== undefined) {
-            currentCommit.lane = createNewLane(lanes)
-        } else if (currentCommit.children.length === 1) {
-            const child = commitMap.get(currentCommit.children[0]!.sha)
-
-            if (child?.lane !== undefined) {
-                currentCommit.lane = child.lane
-            }
-        }
-    }
-
-    // if (currentCommit.children.length > 0) {
-    //     for (const childMeta of currentCommit.children) {
-    //         const child = commitMap.get(childMeta.sha)
-    //
-    //         if (child !== undefined && child.lane === undefined) {
-    //             recursiveAssignLanes(child, commitMap, lanes)
-    //         }
-    //     }
-    // }
-
-    if (currentCommit.parents.length > 0) {
-        for (const parentMeta of currentCommit.parents) {
-            const parent = commitMap.get(parentMeta.sha)
-            if (parent !== undefined) {
-                if (parent.lane === undefined) {
-                    if (currentCommit.parents.length === 1) {
-                        parent.lane = currentCommit.lane
-                    }
-                    recursiveAssignLanes(parent, commitMap, lanes)
-                    // } else if (parent.lane === undefined) {
-                    //     recursiveAssignLanes(parent, commitMap, lanes)
-                }
-            }
-        }
-    }
-}
+// const getOrCreateBranchLane = (name: string, lanes: Map<string, CommitLane>): CommitLane => {
+//     if (!lanes.has(name)) {
+//         lanes.set(name, {
+//             id: name,
+//             name: name,
+//             isVirtualBranch: false,
+//         })
+//     }
+//
+//     return lanes.get(name)!
+// }
+//
+// const recursiveAssignLanes = (
+//     currentCommit: HistoryCommit,
+//     commitMap: Map<string, HistoryCommit>,
+//     lanes: Map<string, CommitLane>,
+// ): void => {
+//     if (currentCommit.lane === undefined) {
+//         if (currentCommit.headOf !== undefined) {
+//             currentCommit.lane = createNewLane(lanes)
+//         } else if (currentCommit.children.length === 1) {
+//             const child = commitMap.get(currentCommit.children[0]!.sha)
+//
+//             if (child?.lane !== undefined) {
+//                 currentCommit.lane = child.lane
+//             }
+//         }
+//     }
+//
+//     // if (currentCommit.children.length > 0) {
+//     //     for (const childMeta of currentCommit.children) {
+//     //         const child = commitMap.get(childMeta.sha)
+//     //
+//     //         if (child !== undefined && child.lane === undefined) {
+//     //             recursiveAssignLanes(child, commitMap, lanes)
+//     //         }
+//     //     }
+//     // }
+//
+//     if (currentCommit.parents.length > 0) {
+//         for (const parentMeta of currentCommit.parents) {
+//             const parent = commitMap.get(parentMeta.sha)
+//             if (parent !== undefined) {
+//                 if (parent.lane === undefined) {
+//                     if (currentCommit.parents.length === 1) {
+//                         parent.lane = currentCommit.lane
+//                     }
+//                     recursiveAssignLanes(parent, commitMap, lanes)
+//                     // } else if (parent.lane === undefined) {
+//                     //     recursiveAssignLanes(parent, commitMap, lanes)
+//                 }
+//             }
+//         }
+//     }
+// }
 
 const assignLanes = (
     commitMap: Map<string, HistoryCommit>,
     branches: Branch[],
 ): HistoryCommit[] => {
-    // map -> array, sort
-    const commits = commitMap
-        .values()
-        .toArray()
-        .sort((a, b) => {
-            return Temporal.Instant.compare(a.timestamp, b.timestamp)
-        })
-        .reverse()
-
-    const lanes = new Map<string, CommitLane>()
-
-    for (const branch of branches.toSorted((a, b) => {
-        const aCreated = Temporal.Instant.from(a.commit!.timestamp!)
-        const bCreated = Temporal.Instant.from(b.commit!.timestamp!)
-        return Temporal.Instant.compare(bCreated, aCreated)
-    })) {
-        const headSha = branch.commit?.id
-        if (headSha === undefined) {
-            continue
-        }
-        const headCommit = commitMap.get(headSha)
-
-        if (headCommit === undefined) {
-            continue
-        }
-        recursiveAssignLanes(headCommit, commitMap, lanes)
+    // 1. Topological order, newest first: every child before its parents.
+    const pending = new Map<string, number>()
+    for (const c of commitMap.values()) {
+        pending.set(c.sha, 0)
     }
 
-    return commits
+    for (const c of commitMap.values()) {
+        for (const parent of c.parents) {
+            pending.set(parent.sha, pending.get(parent.sha)! + 1)
+        }
+    }
+
+    const newestFirst = (a: HistoryCommit, b: HistoryCommit) =>
+        Temporal.Instant.compare(b.timestamp, a.timestamp)
+
+    let ready = [...commitMap.values()].filter((c) => pending.get(c.sha) === 0)
+    const order: HistoryCommit[] = []
+    while (ready.length > 0) {
+        ready.sort(newestFirst)
+        const commit = ready.shift()!
+        order.push(commit)
+        for (const parent of commit.parents) {
+            if (!pending.has(parent.sha)) continue
+            const remaining = pending.get(parent.sha)! - 1
+            pending.set(parent.sha, remaining)
+            if (remaining === 0) ready.push(commitMap.get(parent.sha)!)
+        }
+    }
+
+    // 2. Sweep top to bottom. lanes[i] holds the sha column i is reserved for.
+    const lanes: (string | undefined)[] = []
+
+    const firstFree = (): number => {
+        const idx = lanes.indexOf(undefined)
+        if (idx !== -1) return idx
+        lanes.push(undefined)
+        return lanes.length - 1
+    }
+
+    for (const commit of order) {
+        // The lane this commit sits in: one reserved for it, else a fresh one.
+        let column = lanes.indexOf(commit.sha)
+        if (column === -1) column = firstFree()
+        commit.lane = column
+
+        // Free every lane that was waiting on this commit (merged children).
+        for (let i = 0; i < lanes.length; i++) {
+            if (lanes[i] === commit.sha) {
+                lanes[i] = undefined
+            }
+        }
+
+        // Route parents: first parent keeps this column; the rest get their own.
+        commit.parents.forEach((parent, index) => {
+            if (lanes.includes(parent.sha)) return // already reserved upstream
+            if (index === 0 && lanes[column] === undefined) {
+                lanes[column] = parent.sha
+                return
+            }
+            lanes[firstFree()] = parent.sha
+        })
+
+        // Optional: keep the array tight by dropping trailing free lanes.
+        while (lanes.length > 0 && lanes.at(-1) === undefined) lanes.pop()
+    }
+
+    return order
+
+    // map -> array, sort
+    // const commits = commitMap
+    //     .values()
+    //     .toArray()
+    //     .sort((a, b) => {
+    //         return Temporal.Instant.compare(a.timestamp, b.timestamp)
+    //     })
+    //     .reverse()
+    //
+    // const lanes = new Map<string, CommitLane>()
+    //
+    // for (const branch of branches.toSorted((a, b) => {
+    //     const aCreated = Temporal.Instant.from(a.commit!.timestamp!)
+    //     const bCreated = Temporal.Instant.from(b.commit!.timestamp!)
+    //     return Temporal.Instant.compare(bCreated, aCreated)
+    // })) {
+    //     const headSha = branch.commit?.id
+    //     if (headSha === undefined) {
+    //         continue
+    //     }
+    //     const headCommit = commitMap.get(headSha)
+    //
+    //     if (headCommit === undefined) {
+    //         continue
+    //     }
+    //     recursiveAssignLanes(headCommit, commitMap, lanes)
+    // }
+    //
+    // return commits
 }
 
 export const buildCommitGraph = async (event: H3Event) => {
