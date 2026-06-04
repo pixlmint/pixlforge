@@ -16,4 +16,5 @@ export type HistoryCommit = {
     isMerge: boolean
     headOf?: string
     lane?: CommitLane
+    tip?: string
 }
