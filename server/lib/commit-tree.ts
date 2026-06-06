@@ -118,55 +118,6 @@ const assignCommitTips = (commitMap: Map<string, HistoryCommit>) => {
     }
 }
 
-const createNewLane = (lanes: Map<string, CommitLane>): CommitLane => {
-    const lane: CommitLane = {
-        id: 'virtual_' + lanes.size.toString(),
-        isVirtualBranch: true,
-    }
-
-    lanes.set(lane.id, lane)
-
-    return lane
-}
-
-const recursiveAssignLanes = (
-    currentCommit: HistoryCommit,
-    commitMap: Map<string, HistoryCommit>,
-    lanes: Map<string, CommitLane>,
-): void => {
-    if (currentCommit.column === undefined) {
-        if (currentCommit.headOf !== undefined) {
-            currentCommit.column = createNewLane(lanes)
-        } else if (currentCommit.children.length === 1) {
-            const child = commitMap.get(currentCommit.children[0]!.sha)
-
-            if (child?.column !== undefined) {
-                currentCommit.column = child.column
-            }
-        }
-    }
-
-    if (currentCommit.parents.length > 0) {
-        for (let i = 0; i < currentCommit.parents.length; i++) {
-            const parent = commitMap.get(currentCommit.parents[i]!.sha)
-            if (parent !== undefined) {
-                if (parent.column === undefined) {
-                    if (i === 0) {
-                        parent.column = currentCommit.column
-                        recursiveAssignLanes(parent, commitMap, lanes)
-                    } else if (
-                        (parent.tip === undefined || parent.tip === currentCommit.tip) &&
-                        parent.column === undefined
-                    ) {
-                        parent.column = createNewLane(lanes)
-                        recursiveAssignLanes(parent, commitMap, lanes)
-                    }
-                }
-            }
-        }
-    }
-}
-
 const assignColumns = (
     commitMap: Map<string, HistoryCommit>,
     branches: Branch[],
@@ -251,23 +202,6 @@ const assignColumns = (
         }
     }
 
-    // for (const branch of branches.toSorted((a, b) => {
-    //     const aCreated = Temporal.Instant.from(a.commit!.timestamp!)
-    //     const bCreated = Temporal.Instant.from(b.commit!.timestamp!)
-    //     return Temporal.Instant.compare(bCreated, aCreated)
-    // })) {
-    //     const headSha = branch.commit?.id
-    //     if (headSha === undefined) {
-    //         continue
-    //     }
-    //     const headCommit = commitMap.get(headSha)
-    //
-    //     if (headCommit === undefined) {
-    //         continue
-    //     }
-    //     recursiveAssignLanes(headCommit, commitMap, lanes)
-    // }
-    //
     return commits
 }
 

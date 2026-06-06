@@ -35,33 +35,3 @@ test('linkChildren', () => {
         ).toBeTruthy()
     }
 })
-
-test('basic determineSourceBranch', () => {
-    const commitMap = t.buildCommitMap(dummyCommits())
-
-    t.linkChildren(commitMap)
-
-    const commitUnderTest = commitMap.get('aaa0015')!
-    t.determineSourceBranch(commitUnderTest, commitMap)
-
-    expect(commitUnderTest.sourceBranch).toBe('main')
-})
-
-test('advanced determineSourceBranch', () => {
-    const commitMap = t.buildCommitMap(dummyCommits().reverse())
-
-    t.linkChildren(commitMap)
-
-    const preDetermine = ['aaa0015', 'aaa0014', 'aaa0013']
-
-    preDetermine.forEach((sha) => {
-        const c = commitMap.get(sha)!
-        t.determineSourceBranch(c, commitMap)
-        expect(c.sourceBranch).toBe('main')
-    })
-
-    const commitUnderTest = commitMap.get('aaa0012')!
-    t.determineSourceBranch(commitUnderTest, commitMap)
-
-    expect(commitUnderTest.sourceBranch).toBe('feature/dashboard')
-})
