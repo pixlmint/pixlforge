@@ -1,7 +1,7 @@
 import { repoGetAllCommits, repoListBranches } from '~~/lib/generated'
 import { Temporal } from '@js-temporal/polyfill'
 import type { H3Event } from 'h3'
-import type { CommitLane, HistoryCommit } from '~~/shared/types'
+import type { HistoryCommit } from '~~/shared/types'
 import type { Commit, CommitMeta, Branch } from '~~/lib/generated'
 
 const historyCommitToCommitMeta = (commit: HistoryCommit): CommitMeta => {
@@ -134,14 +134,14 @@ const recursiveAssignLanes = (
     commitMap: Map<string, HistoryCommit>,
     lanes: Map<string, CommitLane>,
 ): void => {
-    if (currentCommit.lane === undefined) {
+    if (currentCommit.column === undefined) {
         if (currentCommit.headOf !== undefined) {
-            currentCommit.lane = createNewLane(lanes)
+            currentCommit.column = createNewLane(lanes)
         } else if (currentCommit.children.length === 1) {
             const child = commitMap.get(currentCommit.children[0]!.sha)
 
-            if (child?.lane !== undefined) {
-                currentCommit.lane = child.lane
+            if (child?.column !== undefined) {
+                currentCommit.column = child.column
             }
         }
     }
@@ -150,15 +150,15 @@ const recursiveAssignLanes = (
         for (let i = 0; i < currentCommit.parents.length; i++) {
             const parent = commitMap.get(currentCommit.parents[i]!.sha)
             if (parent !== undefined) {
-                if (parent.lane === undefined) {
+                if (parent.column === undefined) {
                     if (i === 0) {
-                        parent.lane = currentCommit.lane
+                        parent.column = currentCommit.column
                         recursiveAssignLanes(parent, commitMap, lanes)
                     } else if (
                         (parent.tip === undefined || parent.tip === currentCommit.tip) &&
-                        parent.lane === undefined
+                        parent.column === undefined
                     ) {
-                        parent.lane = createNewLane(lanes)
+                        parent.column = createNewLane(lanes)
                         recursiveAssignLanes(parent, commitMap, lanes)
                     }
                 }
@@ -167,31 +167,107 @@ const recursiveAssignLanes = (
     }
 }
 
-const assignLanes = (
+const assignColumns = (
     commitMap: Map<string, HistoryCommit>,
     branches: Branch[],
 ): HistoryCommit[] => {
-    const commits = commitMap.values().toArray()
+    const commits = commitMap
+        .values()
+        .toArray()
+        .sort((a, b) => {
+            return Temporal.Instant.compare(a.timestamp, b.timestamp)
+        })
+        .reverse()
 
-    const lanes = new Map<string, CommitLane>()
+    let reservedColumns: (string | undefined)[] = []
 
-    for (const branch of branches.toSorted((a, b) => {
-        const aCreated = Temporal.Instant.from(a.commit!.timestamp!)
-        const bCreated = Temporal.Instant.from(b.commit!.timestamp!)
-        return Temporal.Instant.compare(bCreated, aCreated)
-    })) {
-        const headSha = branch.commit?.id
-        if (headSha === undefined) {
-            continue
+    const firstFree = (): number => {
+        const firstIndex = reservedColumns.indexOf(undefined)
+        if (firstIndex !== -1) {
+            return firstIndex
         }
-        const headCommit = commitMap.get(headSha)
-
-        if (headCommit === undefined) {
-            continue
-        }
-        recursiveAssignLanes(headCommit, commitMap, lanes)
+        reservedColumns.push(undefined)
+        return reservedColumns.length - 1
     }
 
+    /*
+        Lane/ Column assignment algorithm provided by Claude Opus 4.8
+        
+        Definitions:
+        - Lane: "A logical strand of history"
+        - Column: "A physical slot" (column defines the x-position of the commit
+                  in relation to the other commits)
+
+        Runtime: Approx. O(n * W) (n=number of commits, W=max. number of concurrent columns)
+
+        Explanation:
+        This algorithm works by processing each commit in reverse chronological
+        ordering (latest - oldest)
+        For each of a commits parents, we 'reserve' a column instead of assigning it.
+        This distinction is crucial, because a commit appearing later than the current
+        one might actually be a direct descendant of that parent, and because that
+        commit must be allowed to change, which column is reserved for that parent.
+
+        This way, a commits column reservation can be changed only until it is processed.
+        Once it was processed, the column for that commit cannot be changed anymore
+    */
+    for (const commit of commits) {
+        // Was a column reserved for this commit? (see below how reservation happens)
+        let column = reservedColumns.indexOf(commit.sha)
+        if (column === -1) {
+            column = firstFree()
+        }
+        // assign either the previously reserved column,
+        // or the newly initialized one, to the current commit
+        commit.column = column
+
+        // clear whatever columns in the reservedColumns array are
+        // reserved for the current commit
+        for (let i = 0; i < reservedColumns.length; i++) {
+            if (reservedColumns[i] === commit.sha) {
+                reservedColumns[i] = undefined
+            }
+        }
+
+        // iterate over all parents. The first parent (parents[0]) belongs to the
+        // same lane as the current commit.
+        // For every parent but the first, that doesn't have a column reserved already,
+        // reserve a fresh column for it (that parent might either be the head of a new lane, or
+        // the parent to a commit we haven't processed yet)
+        commit.parents.forEach((parentMeta, index) => {
+            if (reservedColumns.includes(parentMeta.sha)) return
+
+            if (index === 0 && reservedColumns[column] === undefined) {
+                reservedColumns[column] = parentMeta.sha
+            } else {
+                reservedColumns[firstFree()] = parentMeta.sha
+            }
+        })
+
+        // remove all columns that are reserved to `undefined`, until the first
+        // that's reserved for a real commit (or there are no more reserved columns)
+        while (reservedColumns.length > 0 && reservedColumns.at(-1) === undefined) {
+            reservedColumns.pop()
+        }
+    }
+
+    // for (const branch of branches.toSorted((a, b) => {
+    //     const aCreated = Temporal.Instant.from(a.commit!.timestamp!)
+    //     const bCreated = Temporal.Instant.from(b.commit!.timestamp!)
+    //     return Temporal.Instant.compare(bCreated, aCreated)
+    // })) {
+    //     const headSha = branch.commit?.id
+    //     if (headSha === undefined) {
+    //         continue
+    //     }
+    //     const headCommit = commitMap.get(headSha)
+    //
+    //     if (headCommit === undefined) {
+    //         continue
+    //     }
+    //     recursiveAssignLanes(headCommit, commitMap, lanes)
+    // }
+    //
     return commits
 }
 
@@ -237,7 +313,7 @@ export const buildCommitGraph = async (event: H3Event) => {
     linkChildren(commitMap)
     assignCommitTips(commitMap)
 
-    const commits = assignLanes(commitMap, branches.data!)
+    const commits = assignColumns(commitMap, branches.data!)
 
     return {
         branches: branches.data!,

@@ -38,7 +38,7 @@
         <table class="commit-list">
             <thead>
                 <tr>
-                    <th class="rotate" v-for="[id, _] of lanes" :key="id">
+                    <th class="rotate" v-for="(_, index) in columns" :key="index">
                         <div>
                             <!-- <span>{{ id }}</span> -->
                         </div>
@@ -52,8 +52,8 @@
                     :key="commit.sha"
                     :class="{ active: viewingCommit !== null && viewingCommit.sha === commit.sha }"
                 >
-                    <td v-for="[id, _] in lanes" :key="id">
-                        <span v-if="commit.lane?.id === id">
+                    <td v-for="(_, index) in columns" :key="index">
+                        <span v-if="commit.column === index">
                             <template v-if="commit.isMerge"> \ </template>
                             <template v-else> * </template>
                         </span>
@@ -86,19 +86,13 @@
 <script lang="ts" setup>
 import VueJsonPretty from 'vue-json-pretty'
 import * as d3 from 'd3'
-import type { CommitLane, HistoryCommit } from '~~/shared/types'
+import type { HistoryCommit } from '~~/shared/types'
 
 const { owner, repo } = defineProps<{ owner: string; repo: string }>()
 
 const { branches, commits } = (await useFetch(`/api/${owner}/${repo}/commit-tree`)).data!.value!
 
-const lanes = new Map<string, CommitLane>()
-
-commits.forEach((commit) => {
-    if (commit.lane !== undefined && !lanes.has(commit.lane.id)) {
-        lanes.set(commit.lane.id, commit.lane)
-    }
-})
+const columns = new Array(Math.max(...commits.map((commit) => commit.column!)) + 1)
 
 const graph = ref(null)
 
