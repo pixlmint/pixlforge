@@ -1,75 +1,66 @@
-# Nuxt Minimal Starter
+# pixlforge
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+My own git-forge frontend. Talks to the [Forgejo](https://forgejo.org/) API to
+help me highlight the projects I work on. I might expand it into a full-fledged
+CV page at a later point. Currently read-only, authenticating against forgejo
+under consideration.
+
+Built with [Nuxt](https://nuxt.com/), [Vue 3](https://vuejs.org/),
+[D3.js](https://d3js.org/), and [TypeScript](https://www.typescriptlang.org/).
+
+Based on this design mockup created by claude design
+![pixlforge design mockup](assets/claude-design.png)
+
+Uses `@hey-api/openapi-ts` to auto-generate the forgejo API client
+
+## Tech Stack
+
+| Layer      | Technology                                |
+| ---------- | ----------------------------------------- |
+| Framework  | Nuxt 4 (Nitro)                            |
+| UI         | Vue 3 (Composition API)                   |
+| API Client | @hey-api/openapi-ts                       |
+| Validation | Zod                                       |
+| Caching    | @nuxthub/core (fs-lite)                   |
+| Testing    | Jest                                      |
 
 ## Setup
 
-Make sure to install dependencies:
-
 ```bash
-# npm
 npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
 ```
 
-## Development Server
+Create a `.env` file in the project root:
 
-Start the development server on `http://localhost:3000`:
+```
+NUXT_FORGEJO_RENDER_MARKDOWN_TOKEN=<your-forgejo-token>
+```
+
+This token is used server-side to render repository READMEs through the Forgejo markdown API.
+
+Create the token by going to: `Settings` -> `Applications` -> `Generate new Token`
+
+Min. Permissions: `Public Only`, `misc`: `Read and Write`
+
+## Development
 
 ```bash
-# npm
 npm run dev
+# or to attach a debugger:
+npm run debug
+```
 
-# pnpm
-pnpm dev
+The dev server starts at `http://localhost:3000`.
 
-# yarn
-yarn dev
+## Testing
 
-# bun
-bun run dev
+```bash
+npm test
 ```
 
 ## Production
 
-Build the application for production:
-
 ```bash
-# npm
 npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
 npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
 ```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
