@@ -29,10 +29,10 @@
     <!--     <pre>{{ mermaidGitGraph }}</pre> -->
     <!--     <repo-mermaid-diagram :value="mermaidGitGraph" /> -->
     <!-- </details> -->
-    <!-- <details> -->
-    <!--     <summary>SVG</summary> -->
-    <!--     <svg ref="graph"></svg> -->
-    <!-- </details> -->
+    <details>
+        <summary>SVG</summary>
+        <svg ref="graph"></svg>
+    </details>
 
     <div class="commit-list-split">
         <table class="commit-list">
@@ -138,11 +138,11 @@ const renderGitGraph = (data: HistoryCommit[]) => {
     // We draw lines from Child -> Parent
     const links: { source?: Point; target?: Point }[] = []
     data.forEach((node) => {
-        node.parents.forEach((parentSha) => {
-            if (nodePositions.has(node.sha) && nodePositions.has(parentSha)) {
+        node.parents.forEach((parentMeta) => {
+            if (nodePositions.has(node.sha) && nodePositions.has(parentMeta.sha)) {
                 links.push({
                     source: nodePositions.get(node.sha),
-                    target: nodePositions.get(parentSha),
+                    target: nodePositions.get(parentMeta.sha),
                 })
             }
         })
@@ -150,7 +150,7 @@ const renderGitGraph = (data: HistoryCommit[]) => {
 
     const linkGen = d3
         .line()
-        .curve(d3.curveBasis) // This creates the smooth "Git-style" curves
+        // .curve(d3.curveBasis) // This creates the smooth "Git-style" curves
         .x((d) => d[0])
         .y((d) => d[1])
 
@@ -165,7 +165,7 @@ const renderGitGraph = (data: HistoryCommit[]) => {
             // return linkGen([d.source, { x: d.source.x, y: d.target.y }, d.target]);
             return linkGen([
                 [d.source!.x, d.source!.y],
-                [d.source!.x, d.target!.y],
+                // [d.source!.x, d.target!.y],
                 [d.target!.x, d.target!.y],
             ])
         })
@@ -255,9 +255,9 @@ const buildMermaidGitGraph = (data: HistoryCommit[]): string[] => {
 
 // const mermaidGitGraph = buildMermaidGitGraph(commits).join('\n')
 
-// onMounted(() => {
-//     renderGitGraph(commits)
-// })
+onMounted(() => {
+    renderGitGraph(commits)
+})
 </script>
 
 <style lang="scss">
