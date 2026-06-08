@@ -1,10 +1,5 @@
 import { z } from 'zod'
-import {
-    repoGet,
-    repoGetContents,
-    repoGetContentsList,
-    renderMarkdownRaw,
-} from '~~/lib/generated'
+import { repoGet, repoGetContents, repoGetContentsList, renderMarkdownRaw } from '~~/lib/generated'
 import type { ContentsResponse } from '~~/lib/generated'
 
 type RepoReadme = {
@@ -24,9 +19,7 @@ const repoRequestSchema = z.object({
     owner: z.string().default('pixlmint'),
 })
 
-const getDecodedFileContent = async (
-    file: ContentsResponse,
-): Promise<string | undefined> => {
+const getDecodedFileContent = async (file: ContentsResponse): Promise<string | undefined> => {
     if (file.content === undefined || file.encoding === undefined) {
         return
     }
@@ -36,14 +29,10 @@ const getDecodedFileContent = async (
     }
 }
 
-const getRepoReadme = async (
-    repoRequestData: RepoRequestData,
-): Promise<RepoReadme | undefined> => {
+const getRepoReadme = async (repoRequestData: RepoRequestData): Promise<RepoReadme | undefined> => {
     const repoContents = await repoGetContentsList(repoRequestData)
 
-    const readmeFile = repoContents.data!.filter(
-        (file) => file.name!.toLowerCase() === 'readme.md',
-    )
+    const readmeFile = repoContents.data!.filter((file) => file.name!.toLowerCase() === 'readme.md')
 
     if (readmeFile.length === 0) {
         return
@@ -67,15 +56,12 @@ const getRepoReadme = async (
                 },
             ],
             auth: (auth) => {
-                console.log(useRuntimeConfig().forgejoRenderMarkdownToken)
                 return useRuntimeConfig().forgejoRenderMarkdownToken
             },
         })
 
         const parsedReadme =
-            parsedReadmeResponse.error === undefined
-                ? parsedReadmeResponse.data
-                : undefined
+            parsedReadmeResponse.error === undefined ? parsedReadmeResponse.data : undefined
 
         return {
             raw: rawReadme,
@@ -85,9 +71,7 @@ const getRepoReadme = async (
 }
 
 export default defineEventHandler(async (event) => {
-    const request = await getValidatedQuery(event, (body) =>
-        repoRequestSchema.parse(body),
-    )
+    const request = await getValidatedQuery(event, (body) => repoRequestSchema.parse(body))
 
     const repoRequestData = {
         path: { repo: request.repo, owner: request.owner },
