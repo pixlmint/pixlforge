@@ -47,8 +47,13 @@ const getRepoReadme = async (repoRequestData: RepoRequestData): Promise<RepoRead
 
         const rawReadme = await getDecodedFileContent(readmeContent.data!)
 
+        const rawReadmeCleaned = rawReadme!
+            .split('\n')
+            .filter((line) => !line.startsWith('# '))
+            .join('\n')
+
         const parsedReadmeResponse = await renderMarkdownRaw({
-            body: rawReadme!,
+            body: rawReadmeCleaned,
             security: [
                 {
                     scheme: 'bearer',
