@@ -6,6 +6,12 @@ export default defineNuxtConfig({
         forgejoRenderMarkdownToken: '',
     },
 
+    routeRules: {
+        '/api/*/*/commit-tree': {
+            swr: 3600,
+        },
+    },
+
     vite: {
         optimizeDeps: {
             include: [
