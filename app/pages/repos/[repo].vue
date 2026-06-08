@@ -2,16 +2,12 @@
     <div>
         <h2>{{ repo }}</h2>
         <template v-if="data !== undefined && data.readme !== undefined">
-            <p v-if="data.readme.html" v-html="data.readme.html" />
+            <div v-if="data.readme.html" v-html="data.readme.html" />
             <p v-else-if="data.readme.raw">{{ data.readme.raw }}</p>
             <p v-else>No Readme</p>
         </template>
         <p v-else>No Readme</p>
-        <RepoCommitTree
-            v-if="repo !== undefined"
-            :repo="repo"
-            owner="pixlmint"
-        />
+        <RepoCommitTree v-if="repo !== undefined" :repo="repo" owner="pixlmint" />
         <vue-json-pretty :data="data" />
     </div>
 </template>
