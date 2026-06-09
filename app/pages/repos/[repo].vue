@@ -7,6 +7,7 @@
             <p v-else>No Readme</p>
         </template>
         <p v-else>No Readme</p>
+        <RepoIssueList v-if="repo !== undefined" :repo="repo" owner="pixlmint" />
         <RepoCommitTree v-if="repo !== undefined" :repo="repo" owner="pixlmint" />
         <vue-json-pretty :data="data" />
     </div>
