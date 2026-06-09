@@ -11,16 +11,9 @@
 </template>
 
 <script lang="ts" setup>
-import { issueListIssues } from '~~/lib/generated'
+import type { Issue } from '~~/lib/generated'
 
-const { repo, owner } = defineProps<{ repo: string; owner: string }>()
-
-const issues = (
-    await issueListIssues({
-        path: { owner, repo },
-        query: { limit: 25, state: 'all', sort: 'latest' },
-    })
-).data!
+const { issues } = defineProps<{ issues: Issue[] }>()
 </script>
 
 <style lang="scss">

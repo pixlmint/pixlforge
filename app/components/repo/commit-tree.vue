@@ -16,9 +16,7 @@
 import * as d3 from 'd3'
 import type { HistoryCommit } from '~~/shared/types'
 
-const { owner, repo } = defineProps<{ owner: string; repo: string }>()
-
-const { branches, commits } = (await useFetch(`/api/${owner}/${repo}/commit-tree`)).data!.value!
+const { commits } = defineProps<{ commits: HistoryCommit[] }>()
 
 const graph = ref(null)
 

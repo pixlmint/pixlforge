@@ -1,7 +1,9 @@
 import { buildCommitGraph } from '~~/server/lib/commit-tree'
 
 export default defineEventHandler(
-    buildCommitGraph,
+    async (event) => {
+        return buildCommitGraph(event.context.params!.repo!, event.context.params!.owner!)
+    },
     // },
     // {
     //     maxAge: 60 * 60 * 5,

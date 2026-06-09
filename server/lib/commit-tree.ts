@@ -205,9 +205,7 @@ const assignColumns = (
     return commits
 }
 
-export const buildCommitGraph = async (event: H3Event) => {
-    const repo = event.context.params!.repo!
-    const owner = event.context.params!.owner!
+export const buildCommitGraph = async (repo: string, owner: string) => {
     const branches = await repoListBranches({ path: { owner: owner, repo: repo } })
 
     const commitsPromises = branches.data!.map(async (branch) => {
@@ -247,12 +245,7 @@ export const buildCommitGraph = async (event: H3Event) => {
     linkChildren(commitMap)
     assignCommitTips(commitMap)
 
-    const commits = assignColumns(commitMap, branches.data!)
-
-    return {
-        branches: branches.data!,
-        commits: commits,
-    }
+    return assignColumns(commitMap, branches.data!)
 }
 
 export const testHelpers = {

@@ -1,6 +1,13 @@
 import { z } from 'zod'
-import { repoGet, repoGetContents, repoGetContentsList, renderMarkdownRaw } from '~~/lib/generated'
+import {
+    repoGet,
+    repoGetContents,
+    repoGetContentsList,
+    renderMarkdownRaw,
+    issueListIssues,
+} from '~~/lib/generated'
 import type { ContentsResponse } from '~~/lib/generated'
+import { buildCommitGraph } from '../lib/commit-tree'
 
 type RepoReadme = {
     raw?: string
@@ -27,6 +34,13 @@ const getDecodedFileContent = async (file: ContentsResponse): Promise<string | u
     if (file.encoding === 'base64') {
         return atob(file.content)
     }
+}
+
+const getLatestRepoIssues = async (repoRequestData: RepoRequestData) => {
+    return await issueListIssues({
+        path: repoRequestData.path,
+        query: { limit: 25, state: 'all', sort: 'latest' },
+    })
 }
 
 const getRepoReadme = async (repoRequestData: RepoRequestData): Promise<RepoReadme | undefined> => {
@@ -84,10 +98,14 @@ export default defineEventHandler(async (event) => {
     const repoMeta = await repoGet(repoRequestData)
 
     const repoReadme = await getRepoReadme(repoRequestData)
+    const latestRepoIssues = await getLatestRepoIssues(repoRequestData)
+    const commits = await buildCommitGraph(request.repo, request.owner)
 
     return {
         meta: repoMeta.data!,
         readme: repoReadme,
+        issues: latestRepoIssues.data!,
+        commits: commits,
     }
 
     // }, {
