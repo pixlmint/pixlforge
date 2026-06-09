@@ -1,0 +1,223 @@
+/*!
+  Theme: Moonfly
+  Description: Dark theme based on the Moonfly Vim/Neovim color scheme
+  Author: @bluz71
+  Maintainer: @bluz71
+  Updated: 2026-06-10
+
+  Source: https://github.com/bluz71/vim-moonfly-colors
+*/
+
+.hljs {
+  color: #c6c6c6;
+  background: #080808;
+}
+
+.hljs-doctag,
+.hljs-keyword,
+.hljs-meta .hljs-keyword,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type,
+.hljs-variable.language_ {
+  /* moonfly-violet, moonfly-cranberry */
+  color: #cf87e8;
+}
+
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.class_.inherited__,
+.hljs-title.function_ {
+  /* moonfly-sky, moonfly-blue */
+  color: #74b2ff;
+}
+
+.hljs-title.class_,
+.hljs-title.class_.inherited__ {
+  /* moonfly-blue (Structure) */
+  color: #80a0ff;
+}
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-literal,
+.hljs-meta,
+.hljs-number,
+.hljs-operator,
+.hljs-variable,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id {
+  /* moonfly-cranberry, moonfly-orange, moonfly-turquoise */
+  color: #e65e72;
+}
+
+.hljs-number,
+.hljs-operator {
+  /* moonfly-orange */
+  color: #de935f;
+}
+
+.hljs-operator {
+  /* moonfly-cranberry */
+  color: #e65e72;
+}
+
+.hljs-attr,
+.hljs-attribute {
+  /* moonfly-turquoise */
+  color: #79dac8;
+}
+
+.hljs-variable {
+  /* moonfly-white */
+  color: #c6c6c6;
+}
+
+.hljs-regexp,
+.hljs-string,
+.hljs-meta .hljs-string {
+  /* moonfly-khaki */
+  color: #c6c684;
+}
+
+.hljs-regexp {
+  /* moonfly-turquoise */
+  color: #79dac8;
+}
+
+.hljs-built_in,
+.hljs-symbol {
+  /* moonfly-green, moonfly-purple */
+  color: #8cc85f;
+}
+
+.hljs-symbol {
+  /* moonfly-purple */
+  color: #ae81ff;
+}
+
+.hljs-comment,
+.hljs-code,
+.hljs-formula {
+  /* moonfly-grey58 */
+  color: #949494;
+}
+
+.hljs-comment {
+  font-style: italic;
+}
+
+.hljs-code {
+  /* moonfly-turquoise */
+  color: #79dac8;
+}
+
+.hljs-formula {
+  /* moonfly-sky */
+  color: #74b2ff;
+}
+
+.hljs-name,
+.hljs-quote,
+.hljs-selector-tag,
+.hljs-selector-pseudo {
+  /* moonfly-blue */
+  color: #80a0ff;
+}
+
+.hljs-quote {
+  /* moonfly-grey58 */
+  color: #949494;
+}
+
+.hljs-selector-tag {
+  /* moonfly-crimson */
+  color: #ff5189;
+}
+
+.hljs-selector-id {
+  /* moonfly-yellow */
+  color: #e3c78a;
+}
+
+.hljs-selector-class {
+  /* moonfly-green */
+  color: #8cc85f;
+}
+
+.hljs-selector-attr,
+.hljs-selector-pseudo {
+  /* moonfly-violet */
+  color: #cf87e8;
+}
+
+.hljs-subst {
+  /* moonfly-white */
+  color: #c6c6c6;
+}
+
+.hljs-section {
+  /* moonfly-violet */
+  color: #cf87e8;
+  font-weight: bold;
+}
+
+.hljs-bullet {
+  /* moonfly-cranberry */
+  color: #e65e72;
+}
+
+.hljs-emphasis {
+  /* moonfly-orchid */
+  color: #e196a2;
+  font-style: italic;
+}
+
+.hljs-strong {
+  /* moonfly-orchid */
+  color: #e196a2;
+  font-weight: bold;
+}
+
+.hljs-addition {
+  /* moonfly-green on moonfly-mineral */
+  color: #8cc85f;
+  background-color: #314940;
+}
+
+.hljs-deletion {
+  /* moonfly-red on moonfly-grey18 */
+  color: #ff5d5d;
+  background-color: #2e2e2e;
+}
+
+.hljs-char.escape_ {
+  /* moonfly-cranberry (Special) */
+  color: #e65e72;
+}
+
+.hljs-link {
+  /* moonfly-green */
+  color: #8cc85f;
+}
+
+.hljs-params {
+  /* moonfly-orchid */
+  color: #e196a2;
+}
+
+.hljs-property {
+  /* moonfly-lavender */
+  color: #adadf3;
+}
+
+.hljs-punctuation {
+  /* moonfly-white (Delimiter) */
+  color: #c6c6c6;
+}
+
+.hljs-tag {
+  /* moonfly-blue */
+  color: #80a0ff;
+}
