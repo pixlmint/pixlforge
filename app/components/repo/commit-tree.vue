@@ -24,11 +24,6 @@
 
     <h2>Commits</h2>
 
-    <!-- <details> -->
-    <!--     <summary>mermaid</summary> -->
-    <!--     <pre>{{ mermaidGitGraph }}</pre> -->
-    <!--     <repo-mermaid-diagram :value="mermaidGitGraph" /> -->
-    <!-- </details> -->
     <details>
         <summary>SVG</summary>
         <svg ref="graph"></svg>
@@ -206,54 +201,6 @@ const renderGitGraph = (data: HistoryCommit[]) => {
         })
         .text((d) => d)
 }
-
-const buildMermaidGitGraph = (data: HistoryCommit[]): string[] => {
-    const gitGraph = ['---', 'title: GitGraph', '---', 'gitGraph BT:']
-
-    const gitActions: string[] = []
-
-    let currentBranch: string | undefined
-    let previousBranch: string | undefined
-
-    const registeredBranches = new Set<string>()
-
-    data.reverse().forEach((commit) => {
-        if (currentBranch === undefined) {
-            currentBranch = commit.branchNames[0]!
-            registeredBranches.add(currentBranch)
-            if (currentBranch !== 'main') {
-                gitActions.push(`branch ${currentBranch}`)
-            }
-            gitActions.push(`checkout ${currentBranch}`)
-        }
-
-        if (currentBranch !== commit.branchNames[0]!) {
-            previousBranch = currentBranch
-            if (currentBranch === commit.branchNames[0]) {
-                currentBranch = commit.branchNames[1]!
-            } else {
-                currentBranch = commit.branchNames[0]!
-            }
-
-            if (!registeredBranches.has(currentBranch) && currentBranch !== 'main') {
-                registeredBranches.add(currentBranch)
-                gitActions.push(`branch ${currentBranch}`)
-            }
-
-            gitActions.push(`checkout ${currentBranch}`)
-        }
-
-        if (commit.isMerge && previousBranch !== undefined) {
-            gitActions.push(`merge ${previousBranch}`)
-        }
-
-        gitActions.push(`commit id: "${commit.sha.trim()}"`)
-    })
-
-    return [...gitGraph, ...gitActions.map((row) => `    ${row}`)]
-}
-
-// const mermaidGitGraph = buildMermaidGitGraph(commits).join('\n')
 
 onMounted(() => {
     renderGitGraph(commits)
