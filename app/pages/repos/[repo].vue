@@ -9,13 +9,10 @@
         <p v-else>No Readme</p>
         <RepoIssueList v-if="issues !== undefined" :issues="issues" />
         <RepoCommitTree v-if="commits !== undefined" :commits="commits" />
-        <vue-json-pretty :data="data" />
     </div>
 </template>
 
 <script setup lang="ts">
-import VueJsonPretty from 'vue-json-pretty'
-
 const route = useRoute()
 
 const repo = computed(() => route.params.repo)
