@@ -6,6 +6,8 @@ import {
     renderMarkdownRaw,
     issueListIssues,
 } from '~~/lib/generated'
+import { JSDOM } from 'jsdom'
+import hljs from 'highlight.js'
 import type { ContentsResponse } from '~~/lib/generated'
 import { buildCommitGraph } from '../lib/commit-tree'
 
@@ -82,9 +84,17 @@ const getRepoReadme = async (repoRequestData: RepoRequestData): Promise<RepoRead
         const parsedReadme =
             parsedReadmeResponse.error === undefined ? parsedReadmeResponse.data : undefined
 
+        const dom = new JSDOM(parsedReadme)
+        const document = dom.window.document
+
+        const codeBlocks = document.querySelectorAll('pre code')
+        codeBlocks.forEach((block) => {
+            hljs.highlightElement(block)
+        })
+
         return {
             raw: rawReadme,
-            html: parsedReadme,
+            html: dom.serialize(),
         }
     }
 }
