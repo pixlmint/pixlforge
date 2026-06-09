@@ -1,15 +1,15 @@
 <template>
     <div class="graph-item">
-        <div class="commit-sha">
+        <div class="commit-sha monospaced">
             {{ sha }}
         </div>
-        <div v-if="commit.headOf !== undefined" class="branch">
+        <div v-if="commit.headOf !== undefined" class="branch monospaced">
             {{ commit.headOf }}
         </div>
         <div class="commit-message">
             {{ message }}
         </div>
-        <div class="commit-timestamp">
+        <div class="commit-timestamp monospaced">
             <timeago :date="commit.timestamp" />
         </div>
     </div>
@@ -52,7 +52,6 @@ const message = computed(() => commit.message.split('\n')[0] ?? '<no message>')
     .commit-timestamp,
     .commit-date {
         color: var(--color-secondary);
-        font-family: monospace;
     }
 }
 </style>

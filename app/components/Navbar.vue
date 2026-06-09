@@ -1,5 +1,5 @@
 <template>
-    <div class="header">
+    <div class="header monospaced">
         <div class="breadcrumbs">
             <div class="breadcumb-item breadcumb-root">
                 <nuxt-link to="/">Home</nuxt-link>

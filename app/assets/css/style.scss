@@ -9,8 +9,13 @@
 body {
     background-color: var(--color-bg);
     color: var(--color-text);
+    font-family: "Space Grotesk";
 }
 
+.monospaced,
+code {
+    font-family: "Ioskeley Mono";
+}
 
 .data-list {
     display: grid;
@@ -58,6 +63,17 @@ body {
     }
 }
 
-.vjs-tree-node.is-highlight, .vjs-tree-node:hover {
+.vjs-tree-node.is-highlight,
+.vjs-tree-node:hover {
     background-color: #2f3d43 !important;
+}
+
+@font-face {
+    font-family: "Space Grotesk";
+    src: url("assets/fonts/Space Grotesk/SpaceGrotesk-VariableFont_wght.ttf");
+}
+
+@font-face {
+    font-family: "Ioskeley Mono";
+    src: url("assets/fonts/Ioskeley Mono/IoskeleyMono-Regular.woff2");
 }
