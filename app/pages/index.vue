@@ -9,5 +9,12 @@
 </template>
 
 <script lang="ts" setup>
-const recents = (await useFetch("/api/recent")).data.value!;
+import { useForgeState } from '~~/composables/states'
+const recents = (await useFetch('/api/recent')).data.value!
+
+const forgeState = useForgeState()
+
+onMounted(() => {
+    forgeState.value!.viewingRepo = undefined
+})
 </script>

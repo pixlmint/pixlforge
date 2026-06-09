@@ -13,9 +13,17 @@
 </template>
 
 <script setup lang="ts">
+import { useForgeState } from '~~/composables/states'
+
 const route = useRoute()
 
 const repo = computed(() => route.params.repo)
+
+const forgeState = useForgeState()
+
+onMounted(() => {
+    forgeState.value!.viewingRepo = repo.value as string
+})
 
 const { data } = await useFetch('/api/repo', {
     query: { repo: route.params.repo },
