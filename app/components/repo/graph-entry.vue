@@ -1,13 +1,7 @@
 <template>
-    <div class="graph-timeline-item">
-        {{ timelineIcon }}
-    </div>
     <div class="graph-item">
-        <div class="graph-icon">
-            <span v-if="commit.isMerge">Merge</span>
-        </div>
         <div class="commit-sha">
-            {{ commit.sha }}
+            {{ sha }}
         </div>
         <div v-if="commit.headOf !== undefined" class="branch">
             {{ commit.headOf }}
@@ -22,22 +16,30 @@
 </template>
 
 <script lang="ts" setup>
-import type { HistoryCommit } from '~/types'
+import type { HistoryCommit } from '#shared/types'
 
 const { commit } = defineProps<{ commit: HistoryCommit }>()
 
-const timelineIcon = computed(() => {
-    if (commit.isMerge) {
-        return '\\'
-    } else {
-        return '*'
-    }
-})
+const sha = computed(() => commit.sha.substring(0, 7))
 </script>
 
 <style lang="scss">
 .graph-item {
     display: flex;
     gap: 1rem;
+
+    .branch {
+        padding: 2px;
+        border: 1px solid var(--color-secondary);
+        border-radius: 4px;
+        line-height: 15px;
+    }
+
+    .commit-sha,
+    .commit-timestamp,
+    .commit-date {
+        color: var(--color-secondary);
+        font-family: monospace;
+    }
 }
 </style>

@@ -24,58 +24,70 @@
 
     <h2>Commits</h2>
 
-    <details>
-        <summary>SVG</summary>
+    <div class="commit-history-graph" :style="`--commit-history-item-height: ${LANE_HEIGHT}px`">
         <svg ref="graph"></svg>
-    </details>
-
-    <div class="commit-list-split">
-        <table class="commit-list">
-            <thead>
-                <tr>
-                    <th class="rotate" v-for="(_, index) in columns" :key="index">
-                        <div>
-                            <!-- <span>{{ id }}</span> -->
-                        </div>
-                    </th>
-                    <th>info</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr
-                    v-for="(commit, _) in commits"
-                    :key="commit.sha"
-                    :class="{ active: viewingCommit !== null && viewingCommit.sha === commit.sha }"
-                >
-                    <td v-for="(_, index) in columns" :key="index">
-                        <span v-if="commit.column === index">
-                            <template v-if="commit.isMerge"> \ </template>
-                            <template v-else> * </template>
-                        </span>
-                        <span v-else> | </span>
-                    </td>
-                    <td class="commit-info" @click="viewingCommit = commit">
-                        <span class="commit-sha">{{ commit.sha.substring(0, 7) }}</span>
-                        <span class="commit-message">{{ commit.message.split('\n')[0]! }}</span>
-                        <span class="commit-date">
-                            <!-- <timeago :date="commit.timestamp" /> -->
-                        </span>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-
-        <div class="commit-detail">
-            <vue-json-pretty
-                class="commit-detail-content"
-                v-if="viewingCommit !== null"
-                :data="viewingCommit"
+        <div class="commit-history-labels">
+            <repo-graph-entry
+                class="commit-history-label-item"
+                v-for="(commit, _) in commits"
+                :key="commit.sha"
+                :commit="commit"
             />
         </div>
     </div>
-    <div class="commit-graph">
-        <repo-graph-entry v-for="(commit, _) in commits" :key="commit.sha" :commit="commit" />
-    </div>
+
+    <details>
+        <summary>Raw</summary>
+        <div class="commit-list-split">
+            <table class="commit-list">
+                <thead>
+                    <tr>
+                        <th class="rotate" v-for="(_, index) in columns" :key="index">
+                            <div>
+                                <!-- <span>{{ id }}</span> -->
+                            </div>
+                        </th>
+                        <th>info</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr
+                        v-for="(commit, _) in commits"
+                        :key="commit.sha"
+                        :class="{
+                            active: viewingCommit !== null && viewingCommit.sha === commit.sha,
+                        }"
+                    >
+                        <td v-for="(_, index) in columns" :key="index">
+                            <span v-if="commit.column === index">
+                                <template v-if="commit.isMerge"> \ </template>
+                                <template v-else> * </template>
+                            </span>
+                            <span v-else> | </span>
+                        </td>
+                        <td class="commit-info" @click="viewingCommit = commit">
+                            <span class="commit-sha">{{ commit.sha.substring(0, 7) }}</span>
+                            <span class="commit-message">{{ commit.message.split('\n')[0]! }}</span>
+                            <span class="commit-date">
+                                <!-- <timeago :date="commit.timestamp" /> -->
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="commit-detail">
+                <vue-json-pretty
+                    class="commit-detail-content"
+                    v-if="viewingCommit !== null"
+                    :data="viewingCommit"
+                />
+            </div>
+        </div>
+        <div class="commit-graph">
+            <repo-graph-entry v-for="(commit, _) in commits" :key="commit.sha" :commit="commit" />
+        </div>
+    </details>
 </template>
 
 <script lang="ts" setup>
@@ -91,6 +103,9 @@ const columns = new Array(Math.max(...commits.map((commit) => commit.column!)) +
 
 const graph = ref(null)
 
+const LANE_HEIGHT = 24 // 24px per lane
+const LANE_WIDTH = 15 // 10px per lane
+
 const viewingCommit = ref<HistoryCommit | null>(null)
 
 type Point = {
@@ -99,9 +114,9 @@ type Point = {
 }
 
 const renderGitGraph = (data: HistoryCommit[]) => {
-    const width = 800
-    const height = data.length * 50
-    const margin = { top: 20, right: 150, bottom: 20, left: 50 }
+    const height = data.length * LANE_HEIGHT
+    const margin = { top: LANE_HEIGHT / 2, right: LANE_WIDTH / 2, bottom: 20, left: LANE_WIDTH / 2 }
+    const width = LANE_WIDTH * 2 * (Math.max(...data.map((commit) => commit.column ?? 0)) + 1)
 
     const svg = d3.select(graph.value)
     svg.selectAll('*').remove() // Clear previous renders
@@ -109,23 +124,11 @@ const renderGitGraph = (data: HistoryCommit[]) => {
 
     // 1. POSITIONING LOGIC (The "Lane" Algorithm)
     // We need to calculate X for every commit
-    const lanes: { [key: string]: number } = {} // Map: BranchName -> LaneIndex
-    let nextLaneIndex = 0
     const nodePositions = new Map<string, Point>() // Map: SHA -> {x, y}
 
-    // To simplify this demo, we'll use a simplified lane assignment:
-    // In a real app, you'd track branch lifecycle (birth/death)
     data.forEach((node, i) => {
-        const y = i * 50 + margin.top
-
-        // Assign X based on the first branch name in the node
-        // In a real implementation, you'd track which lane the branch currently occupies
-        const primaryBranch: string = node.branchNames[0]!
-        if (lanes[primaryBranch] === undefined) {
-            lanes[primaryBranch] = nextLaneIndex++
-        }
-
-        const x = lanes[primaryBranch] * 40 + margin.left
+        const y = i * LANE_HEIGHT + margin.top
+        const x = (node.column ?? 0) * LANE_WIDTH + margin.left
         nodePositions.set(node.sha, { x, y })
     })
 
@@ -177,29 +180,6 @@ const renderGitGraph = (data: HistoryCommit[]) => {
         })
 
     nodes.append('circle').attr('r', 6).attr('class', 'commit-node')
-
-    // 4. DRAW LABELS (Commit Messages)
-    nodes
-        .append('text')
-        .attr('class', 'commit-text')
-        .attr('dx', 15)
-        .attr('dy', 4)
-        .text((d) => `${d.sha.substring(0, 7)} - ${d.message}`)
-
-    // 5. DRAW BRANCH LABELS (The colorful labels on the right)
-    const activeBranches = [...new Set(data.flatMap((d) => d.branchNames))]
-    svg.selectAll('.branch-label')
-        .data(activeBranches)
-        .enter()
-        .append('text')
-        .attr('class', 'branch-label')
-        .attr('x', width - margin.right)
-        .attr('y', (d, i) => {
-            // Find the first occurrence of this branch to place the label
-            const firstNode = data.find((n) => n.branchNames.includes(d))
-            return nodePositions.get(firstNode!.sha)!.y
-        })
-        .text((d) => d)
 }
 
 onMounted(() => {
@@ -243,24 +223,6 @@ onMounted(() => {
         tr.active td {
             background-color: #222;
         }
-
-        // th.rotate {
-        //     /* Something you can count on */
-        //     height: 250px;
-        //     white-space: nowrap;
-        // }
-        //
-        // th.rotate > div {
-        //     transform:
-        //         /* Magic Numbers */ translate(0px, 105px)
-        //         /* 45 is really 360 - 45 */ rotate(270deg);
-        //     width: 30px;
-        // }
-        //
-        // th.rotate > div > span {
-        //     border-bottom: 1px solid #ccc;
-        //     padding: 5px 10px;
-        // }
     }
 
     .commit-detail {
@@ -274,33 +236,31 @@ onMounted(() => {
 }
 
 svg {
-    background-color: white;
+    background-color: transparent;
 
     .commit-node {
         fill: #555;
     }
 
-    .commit-text {
-        font-family: sans-serif;
-        font-size: 12px;
-        fill: #333;
-    }
-
     .link {
-        fill: none;
         stroke: #aaa;
         stroke-width: 2px;
         opacity: 0.6;
-    }
-
-    .branch-label {
-        font-weight: bold;
-        font-size: 10px;
-        fill: #007bff;
-    }
-
-    .link {
         fill: #555;
+    }
+}
+:root {
+    --commit-history-item-height: 10px;
+}
+.commit-history-graph {
+    display: flex;
+    gap: 5px;
+
+    .commit-history-labels {
+        .commit-history-label-item {
+            line-height: var(--commit-history-item-height);
+            height: var(--commit-history-item-height);
+        }
     }
 }
 </style>
