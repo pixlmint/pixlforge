@@ -2,8 +2,16 @@
     --color-bg: black;
     --color-text: white;
     --color-secondary: grey;
-    --color-primary: teal;
+    --color-primary: #2bb7c6;
     --color-border: rgb(40, 40, 40);
+}
+
+a {
+    color: var(--color-primary);
+
+    &:visited {
+        color: var(--color-primary);
+    }
 }
 
 body {
