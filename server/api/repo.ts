@@ -67,6 +67,9 @@ const getRepoReadme = async (repoRequestData: RepoRequestData): Promise<RepoRead
         const rawReadmeCleaned = rawReadme!
             .split('\n')
             .filter((line) => !line.startsWith('# '))
+            .map((line) => {
+                return line.replace('#', '##')
+            })
             .join('\n')
             .replace(imageRegex, (match, p1) => {
                 const imageUrl = `/api/${repoRequestData.path.owner}/${repoRequestData.path.repo}/file?path=${p1}`
