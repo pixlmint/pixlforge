@@ -20,7 +20,7 @@ const { commits } = defineProps<{ commits: HistoryCommit[] }>()
 
 const graph = ref(null)
 
-const LANE_HEIGHT = 24 // 24px per lane
+const LANE_HEIGHT = 48 // 24px per lane
 const LANE_WIDTH = 15 // 10px per lane
 
 type Point = {
@@ -110,7 +110,6 @@ onMounted(() => {
 .commit-history-graph {
     display: flex;
     gap: 5px;
-    max-width: 500px;
 
     svg {
         background-color: transparent;
@@ -128,10 +127,8 @@ onMounted(() => {
     }
 
     .commit-history-labels {
-        max-width: 400px;
-
         .commit-history-label-item {
-            line-height: var(--commit-history-item-height);
+            line-height: calc(var(--commit-history-item-height) / 2 - 5px);
             height: var(--commit-history-item-height);
         }
     }

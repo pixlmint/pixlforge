@@ -1,16 +1,20 @@
 <template>
     <div class="graph-item">
-        <div class="commit-sha monospaced">
-            {{ sha }}
+        <div class="graph-item-row">
+            <div class="commit-sha monospaced">
+                {{ sha }}
+            </div>
+            <div class="commit-timestamp monospaced">
+                <timeago :date="commit.timestamp" />
+            </div>
+            <div v-if="commit.headOf !== undefined" class="branch monospaced">
+                {{ commit.headOf }}
+            </div>
         </div>
-        <div v-if="commit.headOf !== undefined" class="branch monospaced">
-            {{ commit.headOf }}
-        </div>
-        <div class="commit-message">
-            {{ message }}
-        </div>
-        <div class="commit-timestamp monospaced">
-            <timeago :date="commit.timestamp" />
+        <div class="graph-item-row">
+            <div class="commit-message">
+                {{ message }}
+            </div>
         </div>
     </div>
 </template>
@@ -27,8 +31,10 @@ const message = computed(() => commit.message.split('\n')[0] ?? '<no message>')
 
 <style lang="scss">
 .graph-item {
-    display: flex;
-    gap: 1rem;
+    .graph-item-row {
+        display: flex;
+        gap: 1rem;
+    }
 
     .branch {
         padding: 2px;
@@ -41,7 +47,6 @@ const message = computed(() => commit.message.split('\n')[0] ?? '<no message>')
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
-        max-width: 200px;
     }
 
     .commit-message {
