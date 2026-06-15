@@ -2,8 +2,8 @@
     <div>
         <h2>{{ repo }}</h2>
         <template v-if="readme !== undefined">
-            <div v-if="readme.html" v-html="readme.html" />
-            <p v-else-if="readme.raw">{{ readme.raw }}</p>
+            <div class="repo-readme" v-if="readme.html" v-html="readme.html" />
+            <pre v-else-if="readme.raw">{{ readme.raw }}</pre>
             <p v-else>No Readme</p>
         </template>
         <p v-else>No Readme</p>

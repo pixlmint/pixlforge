@@ -63,6 +63,37 @@ code {
     }
 }
 
+.repo-readme {
+    img {
+        max-width: 100%;
+    }
+
+    table {
+        border: 2px solid var(--color-secondary);
+
+        tr {
+
+            td,
+            th {
+                padding: 5px 20px;
+            }
+        }
+
+        tr:not(:last-child) {
+
+            td,
+            th {
+                border-bottom: 1px solid var(--color-secondary);
+            }
+        }
+    }
+
+    pre.code-block {
+        padding: 1rem;
+        border: 1px solid var(--color-secondary);
+    }
+}
+
 .vjs-tree-node.is-highlight,
 .vjs-tree-node:hover {
     background-color: #2f3d43 !important;
