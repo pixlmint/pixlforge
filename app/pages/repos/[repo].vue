@@ -47,35 +47,34 @@ const { data } = await useFetch('/api/repo', {
     query: { repo: route.params.repo },
 })
 
-const meta = computed(() => (data.value !== undefined ? data.value.meta : undefined))
-const issues = computed(() => (data.value !== undefined ? data.value.issues : undefined))
-const commits = computed(() => (data.value !== undefined ? data.value.commits : undefined))
-const readme = computed(() => (data.value !== undefined ? data.value.readme : undefined))
+const columns = computed(() => {
+    if (data.value === undefined) return []
 
-const columns = [
-    {
-        width: '70vw',
-        components: [
-            {
-                title: 'readme',
-                content: h(Readme, { readme: readme.value }),
-            },
-            {
-                title: 'commits',
-                content: h(CommitTree, { commits: commits.value }),
-            },
-        ],
-    },
-    {
-        width: '30vw',
-        components: [
-            {
-                title: 'issues',
-                content: h(IssueList, { issues: issues.value }),
-            },
-        ],
-    },
-]
+    return [
+        {
+            width: '70vw',
+            components: [
+                {
+                    title: 'readme',
+                    content: h(Readme, { readme: data.value.readme }),
+                },
+                {
+                    title: 'commits',
+                    content: h(CommitTree, { commits: data.value.commits }),
+                },
+            ],
+        },
+        {
+            width: '30vw',
+            components: [
+                {
+                    title: 'issues',
+                    content: h(IssueList, { issues: data.value.issues }),
+                },
+            ],
+        },
+    ]
+})
 </script>
 
 <style lang="scss">
