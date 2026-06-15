@@ -1,5 +1,4 @@
 <template>
-    <h2>Recent Repos</h2>
     <Table :columnConfiguration="columnConfiguration" :data="repos">
         <template #cell="{ row, col, value }">
             <nuxt-link v-if="col.member === 'name'" :to="`/repos/${value}`">{{ value }}</nuxt-link>

@@ -1,14 +1,13 @@
 <template>
-    <h2>Recent Activity</h2>
-    <input type="checkbox" v-model="debug">
-    <div class="feed" v-for="entry, index in feed" :key="index">
+    <input type="checkbox" v-model="debug" />
+    <div class="feed" v-for="(entry, index) in feed" :key="index">
         <FeedItem :entry="entry" :debug="debug" />
     </div>
 </template>
 <script lang="ts" setup>
-import type { SerializedRecentActivity } from '~~/server/types';
+import type { SerializedRecentActivity } from '~~/server/types'
 
-const { feed } = defineProps<{ feed: SerializedRecentActivity[] }>();
+const { feed } = defineProps<{ feed: SerializedRecentActivity[] }>()
 
-const debug = ref(false);
+const debug = ref(false)
 </script>

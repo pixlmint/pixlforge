@@ -4,3 +4,11 @@ export type TableColumnConfiguration = {
     title?: string
     cellClassList?: string
 }
+
+export type PageWithLayoutColumn = {
+    width: string
+    components: {
+        title: string
+        content: VNode
+    }[]
+}
