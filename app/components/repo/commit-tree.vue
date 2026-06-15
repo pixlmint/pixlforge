@@ -1,5 +1,8 @@
 <template>
-    <div class="commit-history-graph" :style="`--commit-history-item-height: ${LANE_HEIGHT}px`">
+    <div
+        class="commit-history-graph"
+        :style="`--commit-history-item-height: ${LANE_HEIGHT}px; --commit-svg-width: ${graphWidth}px`"
+    >
         <svg ref="graph"></svg>
         <div class="commit-history-labels">
             <repo-graph-entry
@@ -19,6 +22,7 @@ import type { HistoryCommit } from '~~/shared/types'
 const { commits } = defineProps<{ commits: HistoryCommit[] }>()
 
 const graph = ref(null)
+const graphWidth = ref(0)
 
 const LANE_HEIGHT = 48 // 24px per lane
 const LANE_WIDTH = 15 // 10px per lane
@@ -31,11 +35,11 @@ type Point = {
 const renderGitGraph = (data: HistoryCommit[]) => {
     const height = data.length * LANE_HEIGHT
     const margin = { top: LANE_HEIGHT / 2, right: LANE_WIDTH / 2, bottom: 20, left: LANE_WIDTH / 2 }
-    const width = LANE_WIDTH * 2 * (Math.max(...data.map((commit) => commit.column ?? 0)) + 1)
+    graphWidth.value = LANE_WIDTH * 2 * (Math.max(...data.map((commit) => commit.column ?? 0)) + 1)
 
     const svg = d3.select(graph.value)
     svg.selectAll('*').remove() // Clear previous renders
-    svg.attr('width', width).attr('height', height)
+    svg.attr('width', graphWidth.value).attr('height', height)
 
     // 1. POSITIONING LOGIC (The "Lane" Algorithm)
     // We need to calculate X for every commit
@@ -105,6 +109,7 @@ onMounted(() => {
 <style lang="scss">
 :root {
     --commit-history-item-height: 10px;
+    --commit-svg-width: 10px;
 }
 
 .commit-history-graph {
@@ -130,6 +135,7 @@ onMounted(() => {
         .commit-history-label-item {
             line-height: calc(var(--commit-history-item-height) / 2 - 5px);
             height: var(--commit-history-item-height);
+            width: calc(var(--content-column-width) - var(--commit-svg-width) - 2rem);
         }
     }
 }
