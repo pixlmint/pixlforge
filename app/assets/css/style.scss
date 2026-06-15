@@ -91,6 +91,8 @@ code {
     pre.code-block {
         padding: 1rem;
         border: 1px solid var(--color-secondary);
+        max-width: 100%;
+        overflow-x: auto;
     }
 }
 
