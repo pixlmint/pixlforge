@@ -1,7 +1,7 @@
 <template>
     <div class="issue-list">
         <div v-for="(issue, _) in issues" :key="issue.id" class="issue-list-item">
-            <Checkbox :checked="issue.state !== 'open'" />
+            <Checkbox :disabled="true" :checked="issue.state !== 'open'" />
             <div class="issue-number">#{{ issue.number }}</div>
             <div>
                 {{ issue.title }}
