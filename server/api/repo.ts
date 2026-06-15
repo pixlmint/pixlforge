@@ -62,11 +62,17 @@ const getRepoReadme = async (repoRequestData: RepoRequestData): Promise<RepoRead
         })
 
         const rawReadme = await getDecodedFileContent(readmeContent.data!)
+        const imageRegex = /!\[.*?\]\(((?!https?:\/\/)[^)]+)\)/g
 
         const rawReadmeCleaned = rawReadme!
             .split('\n')
             .filter((line) => !line.startsWith('# '))
             .join('\n')
+            .replace(imageRegex, (match, p1) => {
+                const imageUrl = `/api/${repoRequestData.path.owner}/${repoRequestData.path.repo}/file?path=${p1}`
+
+                return match.replace(p1, imageUrl)
+            })
 
         const parsedReadmeResponse = await renderMarkdownRaw({
             body: rawReadmeCleaned,
