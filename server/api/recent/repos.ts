@@ -13,6 +13,7 @@ export const getRepos = async () => {
 
     return repos.data
         .filter((repo) => !repo.archived)
+        .filter((repo) => repo.topics === undefined || !repo.topics.includes('fork'))
         .map((repo) => {
             return {
                 name: repo.name,
