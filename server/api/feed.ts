@@ -1,46 +1,59 @@
-import { repoListActivityFeeds, userListRepos } from "~~/lib/generated";
-import { Temporal } from "@js-temporal/polyfill";
-import type { Activity } from "~~/lib/generated";
-import type { ActivityContent, ActivityType } from "../types";
+import { repoListActivityFeeds, userListRepos } from '~~/lib/generated'
+import { Temporal } from '@js-temporal/polyfill'
+import type { Activity } from '~~/lib/generated'
+import type { ActivityContent, ActivityType } from '../types'
 
-export const getCombinedRepositoryFeed = async (op_types?: ActivityType[] | ((activity: Activity) => boolean)) => {
-    const repos = await userListRepos({ path: { username: "pixlmint" }, query: { limit: 500 } });
+export const getCombinedRepositoryFeed = async (
+    op_types?: ActivityType[] | ((activity: Activity) => boolean),
+) => {
+    const repos = await userListRepos({
+        path: { username: useRuntimeConfig().primaryUser },
+        query: { limit: 500 },
+    })
 
     if (repos.error) {
-        throw repos.error.message;
+        throw repos.error.message
     }
 
     const reposActivitiesPromises = repos.data.map(async (repo) => {
-        const feed = await repoListActivityFeeds({ path: { owner: "pixlmint", repo: repo.name! } })
+        const feed = await repoListActivityFeeds({
+            path: { owner: useRuntimeConfig().primaryUser, repo: repo.name! },
+        })
 
         if (feed.error) {
-            throw feed.error.message;
+            throw feed.error.message
         }
 
         if (op_types === undefined) {
-            return feed.data;
+            return feed.data
         } else if (typeof op_types === 'function') {
             return feed.data.filter(op_types)
         } else {
-            return feed.data.filter(entry => op_types.includes(entry.op_type!))
+            return feed.data.filter((entry) => op_types.includes(entry.op_type!))
         }
-    });
+    })
 
-    const reposActivities = await Promise.all(reposActivitiesPromises);
+    const reposActivities = await Promise.all(reposActivitiesPromises)
 
-    return reposActivities.flat()
-        .sort((a, b) => Temporal.Instant.compare(Temporal.Instant.from(a.created!), Temporal.Instant.from(b.created!)))
+    return reposActivities
+        .flat()
+        .sort((a, b) =>
+            Temporal.Instant.compare(
+                Temporal.Instant.from(a.created!),
+                Temporal.Instant.from(b.created!),
+            ),
+        )
         .reverse()
 }
 
 export const parseActivityContent = (entry: Activity): null | ActivityContent => {
-    const content = entry.content;
+    const content = entry.content
 
     if (typeof content !== 'string' || content === '') {
-        return null;
+        return null
     }
 
-    const parsed: ActivityContent & [string, string] = JSON.parse(content);
+    const parsed: ActivityContent & [string, string] = JSON.parse(content)
 
     switch (entry.op_type) {
         case 'create_issue':
@@ -50,11 +63,10 @@ export const parseActivityContent = (entry: Activity): null | ActivityContent =>
                 text: parsed[1],
             }
         default:
-            return parsed;
+            return parsed
     }
 }
 
-
 export default defineEventHandler(() => {
-    return getCombinedRepositoryFeed();
+    return getCombinedRepositoryFeed()
 })

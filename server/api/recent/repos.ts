@@ -1,16 +1,19 @@
-import { userListRepos } from "~~/lib/generated"
-import { Temporal } from "@js-temporal/polyfill";
+import { userListRepos } from '~~/lib/generated'
+import { Temporal } from '@js-temporal/polyfill'
 
 export const getRepos = async () => {
-    const repos = await userListRepos({ path: { username: 'pixlmint' }, query: { limit: 500 } });
+    const repos = await userListRepos({
+        path: { username: useRuntimeConfig().primaryUser },
+        query: { limit: 500 },
+    })
 
     if (repos.error) {
-        throw repos.error;
+        throw repos.error
     }
 
     return repos.data
-        .filter(repo => !repo.archived)
-        .map(repo => {
+        .filter((repo) => !repo.archived)
+        .map((repo) => {
             return {
                 name: repo.name,
                 id: repo.id,
@@ -26,5 +29,5 @@ export const getRepos = async () => {
 }
 
 export default defineEventHandler(() => {
-    return getRepos();
+    return getRepos()
 })

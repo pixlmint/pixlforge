@@ -26,13 +26,15 @@ import { useForgeState } from '~~/composables/states'
 
 const forgeState = useForgeState()
 
+const baseUrl = useRuntimeConfig().forgejoBaseUrl
+const primaryUser = useRuntimeConfig().primaryUser
+
 const forgejoUrl = computed(() => {
-    const base = 'https://git.pixlmint.ch'
     if (forgeState.value === undefined || forgeState.value.viewingRepo === undefined) {
-        return base
+        return baseUrl
     }
 
-    return `${base}/pixlmint/${forgeState.value.viewingRepo}`
+    return `${baseUrl}/${primaryUser}/${forgeState.value.viewingRepo}`
 })
 
 const route = computed(() => {

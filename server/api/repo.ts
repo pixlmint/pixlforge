@@ -25,7 +25,7 @@ type RepoRequestData = {
 
 const repoRequestSchema = z.object({
     repo: z.string(),
-    owner: z.string().default('pixlmint'),
+    owner: z.string().default(useRuntimeConfig().primaryUser),
 })
 
 const getDecodedFileContent = async (file: ContentsResponse): Promise<string | undefined> => {

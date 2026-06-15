@@ -4,6 +4,8 @@ export default defineNuxtConfig({
 
     runtimeConfig: {
         forgejoRenderMarkdownToken: '',
+        forgejoBaseUrl: '',
+        primaryUser: '',
     },
 
     routeRules: {
