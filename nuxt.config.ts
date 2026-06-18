@@ -39,5 +39,9 @@ export default defineNuxtConfig({
         cache: true,
     },
 
-    modules: ['@nuxthub/core'],
+    content: {
+        build: { markdown: { highlight: false } },
+    },
+
+    modules: ['@nuxthub/core', '@nuxt/content'],
 })

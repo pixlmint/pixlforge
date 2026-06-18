@@ -1,5 +1,6 @@
 <template>
     <PageWithLayout :columns="columns" />
+    <ContentRenderer v-if="page" :value="page" />
 </template>
 
 <script lang="ts" setup>
@@ -37,4 +38,8 @@ const columns = computed((): PageWithLayoutColumn[] => {
         },
     ]
 })
+
+const { data: page } = await useAsyncData('page', () =>
+    queryCollection('content').path('/').first(),
+)
 </script>
