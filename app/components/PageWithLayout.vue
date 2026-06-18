@@ -46,6 +46,7 @@ const { columns } = defineProps<{ columns: PageWithLayoutColumn[] }>()
 
         .column-item {
             border: 2px solid white;
+            background-color: var(--color-bg);
 
             .item-header,
             .item-content {
