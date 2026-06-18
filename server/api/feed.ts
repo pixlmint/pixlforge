@@ -7,7 +7,7 @@ export const getCombinedRepositoryFeed = async (
     op_types?: ActivityType[] | ((activity: Activity) => boolean),
 ) => {
     const repos = await userListRepos({
-        path: { username: useRuntimeConfig().primaryUser },
+        path: { username: useRuntimeConfig().public.primaryUser },
         query: { limit: 500 },
     })
 
@@ -17,7 +17,7 @@ export const getCombinedRepositoryFeed = async (
 
     const reposActivitiesPromises = repos.data.map(async (repo) => {
         const feed = await repoListActivityFeeds({
-            path: { owner: useRuntimeConfig().primaryUser, repo: repo.name! },
+            path: { owner: useRuntimeConfig().public.primaryUser, repo: repo.name! },
         })
 
         if (feed.error) {

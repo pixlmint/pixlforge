@@ -26,8 +26,8 @@ import { useForgeState } from '~~/composables/states'
 
 const forgeState = useForgeState()
 
-const baseUrl = useRuntimeConfig().forgejoBaseUrl
-const primaryUser = useRuntimeConfig().primaryUser
+const baseUrl = useRuntimeConfig().public.forgejoBaseUrl
+const primaryUser = useRuntimeConfig().public.primaryUser
 
 const forgejoUrl = computed(() => {
     if (forgeState.value === undefined || forgeState.value.viewingRepo === undefined) {

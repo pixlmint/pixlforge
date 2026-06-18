@@ -3,7 +3,7 @@ import { Temporal } from '@js-temporal/polyfill'
 
 export const getRepos = async () => {
     const repos = await userListRepos({
-        path: { username: useRuntimeConfig().primaryUser },
+        path: { username: useRuntimeConfig().public.primaryUser },
         query: { limit: 500 },
     })
 

@@ -25,7 +25,7 @@ type RepoRequestData = {
 
 const repoRequestSchema = z.object({
     repo: z.string(),
-    owner: z.string().default(useRuntimeConfig().primaryUser),
+    owner: z.string().default(useRuntimeConfig().public.primaryUser),
 })
 
 const getDecodedFileContent = async (file: ContentsResponse): Promise<string | undefined> => {
@@ -48,7 +48,9 @@ const getLatestRepoIssues = async (repoRequestData: RepoRequestData) => {
 const getRepoReadme = async (repoRequestData: RepoRequestData): Promise<RepoReadme | undefined> => {
     const repoContents = await repoGetContentsList(repoRequestData)
 
-    const readmeFile = repoContents.data!.filter((file) => file.name!.toLowerCase() === 'readme.md')
+    if (repoContents.error) throw repoContents.error
+
+    const readmeFile = repoContents.data.filter((file) => file.name!.toLowerCase() === 'readme.md')
 
     if (readmeFile.length === 0) {
         return

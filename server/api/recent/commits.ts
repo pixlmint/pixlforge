@@ -31,7 +31,7 @@ export const getCommits = async () => {
             .map(async (entry) => {
                 const commitInfo = await repoGetSingleCommit({
                     path: {
-                        owner: useRuntimeConfig().primaryUser,
+                        owner: useRuntimeConfig().public.primaryUser,
                         repo: entry.repo!.name!,
                         sha: entry.jsonContent!.HeadCommit!.Sha1,
                     },

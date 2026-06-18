@@ -4,7 +4,7 @@ import { Temporal } from '@js-temporal/polyfill'
 const findReposWithActions = defineCachedFunction(
     async () => {
         const repos = await userListRepos({
-            path: { username: useRuntimeConfig().primaryUser },
+            path: { username: useRuntimeConfig().public.primaryUser },
             query: { limit: 500 },
         })
 
