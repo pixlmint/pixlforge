@@ -14,7 +14,13 @@ const props = defineProps({
 })
 
 function toInstant(d: unknown): Temporal.Instant {
-    if (typeof d === 'string') return Temporal.Instant.from(d)
+    if (typeof d === 'string') {
+        try {
+            return Temporal.Instant.from(d)
+        } catch {
+            return Temporal.PlainDate.from(d).toZonedDateTime(Temporal.Now.timeZoneId()).toInstant()
+        }
+    }
     if (d instanceof Date) return Temporal.Instant.fromEpochMilliseconds(d.getTime())
     if (d instanceof Temporal.ZonedDateTime) return d.toInstant()
     return d as Temporal.Instant
