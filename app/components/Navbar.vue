@@ -13,9 +13,10 @@
                 </div>
             </template>
         </div>
-        <div>
+        <div class="navlinks">
+            <NuxtLink to="/cv">CV</NuxtLink>
             <a :href="forgejoUrl" title="Open Forgejo" target="_blank">
-                <img src="assets/img/forgejo-icon.svg" width="20" height="20" />
+                <Icon icon="forgejo" />
             </a>
         </div>
     </div>
@@ -63,6 +64,11 @@ const route = computed(() => {
                 color: var(--color-secondary);
             }
         }
+    }
+
+    .navlinks {
+        display: flex;
+        gap: 0.5rem;
     }
 }
 </style>
