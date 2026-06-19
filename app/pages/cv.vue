@@ -4,6 +4,6 @@
 
 <script lang="ts" setup>
 const { data: cv } = useAsyncData('cv-content', () =>
-    queryCollection('content').path('/cv').first(),
+    queryCollection('pages').path('/pages/cv').first(),
 )
 </script>

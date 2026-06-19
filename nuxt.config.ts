@@ -37,10 +37,18 @@ export default defineNuxtConfig({
 
     hub: {
         cache: true,
+        kv: true,
     },
 
     content: {
-        build: { markdown: { highlight: false } },
+        build: {
+            markdown: {
+                highlight: false,
+            },
+        },
+        renderer: {
+            anchorLinks: false,
+        },
     },
 
     modules: ['@nuxthub/core', '@nuxt/content'],

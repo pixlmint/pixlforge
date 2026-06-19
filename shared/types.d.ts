@@ -1,3 +1,5 @@
+import { Temporal } from '@js-temporal/polyfill'
+
 export type HistoryCommit = {
     sha: string
     message: string
@@ -11,4 +13,13 @@ export type HistoryCommit = {
     headOf?: string
     column?: number
     tip?: string
+}
+
+export type ProjectSearchResult = {
+    title: string
+    description?: string
+    portfolioId?: string
+    forgeId?: string
+    latestUpdate?: Temporal.Instant
+    lastUsed?: Temporal.Instant
 }
