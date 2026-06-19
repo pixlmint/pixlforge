@@ -10,6 +10,7 @@ import { JSDOM } from 'jsdom'
 import hljs from 'highlight.js'
 import type { ContentsResponse } from '~~/lib/generated'
 import { buildCommitGraph } from '../lib/commit-tree'
+import type { H3Event } from 'h3'
 
 type RepoReadme = {
     raw?: string
@@ -110,6 +111,12 @@ const getRepoReadme = async (repoRequestData: RepoRequestData): Promise<RepoRead
     }
 }
 
+const getPortfolioEntry = async (event: H3Event, project: string) => {
+    return await queryCollection(event, 'portfolio')
+        .path('/portfolio/' + project)
+        .first()
+}
+
 export default defineEventHandler(async (event) => {
     const request = await getValidatedQuery(event, (body) => repoRequestSchema.parse(body))
 
@@ -121,10 +128,12 @@ export default defineEventHandler(async (event) => {
     const repoReadme = await getRepoReadme(repoRequestData)
     const latestRepoIssues = await getLatestRepoIssues(repoRequestData)
     const commits = await buildCommitGraph(request.repo, request.owner)
+    const portfolioEntry = await getPortfolioEntry(event, request.repo)
 
     return {
         meta: repoMeta.data!,
         readme: repoReadme,
+        portfolio: portfolioEntry,
         issues: latestRepoIssues.data!,
         commits: commits,
     }
