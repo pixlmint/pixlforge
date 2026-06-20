@@ -1,8 +1,8 @@
-import { repoGetAllCommits, repoListBranches } from '~~/lib/generated'
+import { repoGetAllCommits, repoListBranches } from '~~/lib/forgejo'
 import { Temporal } from '@js-temporal/polyfill'
 import type { H3Event } from 'h3'
 import type { HistoryCommit } from '~~/shared/types'
-import type { Commit, CommitMeta, Branch } from '~~/lib/generated'
+import type { Commit, CommitMeta, Branch } from '~~/lib/forgejo'
 
 const historyCommitToCommitMeta = (commit: HistoryCommit): CommitMeta => {
     return {

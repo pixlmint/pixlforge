@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { repoGetContents } from '~~/lib/generated'
-import type { RepoGetContentsData, Options } from '~~/lib/generated'
+import { repoGetContents } from '~~/lib/forgejo'
+import type { RepoGetContentsData, Options } from '~~/lib/forgejo'
 
 const fileRequestSchema = z.object({
     path: z.string(),

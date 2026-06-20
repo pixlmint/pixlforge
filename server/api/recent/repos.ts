@@ -1,4 +1,4 @@
-import { userListRepos } from '~~/lib/generated'
+import { userListRepos } from '~~/lib/forgejo'
 import { Temporal } from '@js-temporal/polyfill'
 import { searchProjects } from '../project/search'
 

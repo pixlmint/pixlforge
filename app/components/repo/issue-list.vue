@@ -11,7 +11,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { Issue } from '~~/lib/generated'
+import type { Issue } from '~~/lib/forgejo'
 
 const { issues } = defineProps<{ issues: Issue[] }>()
 </script>

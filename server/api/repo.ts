@@ -5,10 +5,10 @@ import {
     repoGetContentsList,
     renderMarkdownRaw,
     issueListIssues,
-} from '~~/lib/generated'
+} from '~~/lib/forgejo'
 import { JSDOM } from 'jsdom'
 import hljs from 'highlight.js'
-import type { ContentsResponse } from '~~/lib/generated'
+import type { ContentsResponse } from '~~/lib/forgejo'
 import { buildCommitGraph } from '../lib/commit-tree'
 import type { H3Event } from 'h3'
 

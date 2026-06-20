@@ -1,4 +1,4 @@
-import { userListRepos, listActionRuns } from '~~/lib/generated'
+import { userListRepos, listActionRuns } from '~~/lib/forgejo'
 import { Temporal } from '@js-temporal/polyfill'
 
 const findReposWithActions = defineCachedFunction(

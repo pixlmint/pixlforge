@@ -1,6 +1,6 @@
-import type { Activity } from '~~/lib/generated'
+import type { Activity } from '~~/lib/forgejo'
 import type { FeedCommitEntryContent } from '~~/server/types'
-import { repoGetSingleCommit } from '~~/lib/generated'
+import { repoGetSingleCommit } from '~~/lib/forgejo'
 import { getCombinedRepositoryFeed, parseActivityContent } from '../feed'
 
 type UnpackedActivity = Activity & {

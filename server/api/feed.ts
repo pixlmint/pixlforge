@@ -1,6 +1,6 @@
-import { repoListActivityFeeds, userListRepos } from '~~/lib/generated'
+import { repoListActivityFeeds, userListRepos } from '~~/lib/forgejo'
 import { Temporal } from '@js-temporal/polyfill'
-import type { Activity } from '~~/lib/generated'
+import type { Activity } from '~~/lib/forgejo'
 import type { ActivityContent, ActivityType } from '../types'
 
 export const getCombinedRepositoryFeed = async (
