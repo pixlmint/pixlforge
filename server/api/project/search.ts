@@ -220,34 +220,30 @@ export const searchProjects = async (
 
     // TODO: integrate wakatime
 
-    type OrderFunction = (a: ProjectSearchResult, b: ProjectSearchResult) => number
-
-    const orderFunction = (): OrderFunction => {
-        if (orderBy === 'title') {
-            const retval = orderDirection === 'asc' ? -1 : 1
-            return (a, b) => {
-                if (a.title === b.title) return 0
-                if (a.title < b.title) return retval
-                return retval * -1
-            }
-        } else if (orderBy === 'latestUpdate') {
-            if (orderDirection === 'asc')
-                return (a, b) => Temporal.Instant.compare(a.latestUpdate!, b.latestUpdate!)
-            else return (b, a) => Temporal.Instant.compare(a.latestUpdate!, b.latestUpdate!)
-        } else if (orderBy === 'lastUsed') {
-            if (orderDirection === 'asc')
-                return (a, b) => Temporal.Instant.compare(a.lastUsed!, b.lastUsed!)
-            else return (b, a) => Temporal.Instant.compare(a.lastUsed!, b.lastUsed!)
-        }
-
-        throw new Error('Unknown order key: ' + orderBy)
-    }
-
-    console.log(portfolioEntries)
-
     if (orderBy === undefined) {
         return portfolioEntries
     } else {
+        type OrderFunction = (a: ProjectSearchResult, b: ProjectSearchResult) => number
+        const orderFunction = (): OrderFunction => {
+            if (orderBy === 'title') {
+                const retval = orderDirection === 'asc' ? -1 : 1
+                return (a, b) => {
+                    if (a.title === b.title) return 0
+                    if (a.title < b.title) return retval
+                    return retval * -1
+                }
+            } else if (orderBy === 'latestUpdate') {
+                if (orderDirection === 'asc')
+                    return (a, b) => Temporal.Instant.compare(a.latestUpdate!, b.latestUpdate!)
+                else return (b, a) => Temporal.Instant.compare(a.latestUpdate!, b.latestUpdate!)
+            } else if (orderBy === 'lastUsed') {
+                if (orderDirection === 'asc')
+                    return (a, b) => Temporal.Instant.compare(a.lastUsed!, b.lastUsed!)
+                else return (b, a) => Temporal.Instant.compare(a.lastUsed!, b.lastUsed!)
+            }
+
+            throw new Error('Unknown order key: ' + orderBy)
+        }
         return portfolioEntries.sort(orderFunction())
     }
 }
