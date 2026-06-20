@@ -4,14 +4,40 @@ import type { H3Event } from 'h3'
 import { kv } from '@nuxthub/kv'
 import { repoGet, repoSearch, userListRepos } from '~~/lib/generated'
 import type { Repository } from '~~/lib/generated'
-import type { PortfolioCollectionItem } from '@nuxt/content'
+import type { PortfolioCollectionItem, SQLOperator } from '@nuxt/content'
 import type { ProjectSearchResult } from '~~/shared/types'
 
+const op = z.literal(['eq', 'ge', 'le', 'gt', 'lt'])
+type QueryOperator = 'eq' | 'ge' | 'le' | 'gt' | 'lt'
+
 const searchRequestSchema = z.object({
-    technology: z.string().optional(),
     order: z.literal(['title', 'latestUpdate', 'lastUsed']).default('title'),
     orderDirection: z.literal(['asc', 'desc']).default('asc'),
+    filterBy: z.literal(['technology', 'archived', 'latestUpdate', 'lastUsed']).optional(),
+    filterOperator: op.optional(),
+    filterValue: z.any().optional(),
 })
+
+type ProjectFilter = {
+    field?: 'technology' | 'latestUpdate' | 'lastUsed' | 'archived'
+    operator?: QueryOperator
+    value?: any
+}
+
+const queryFilterOperatorToSqlOperator = (op: QueryOperator): SQLOperator => {
+    switch (op) {
+        case 'eq':
+            return '='
+        case 'ge':
+            return '>='
+        case 'le':
+            return '<='
+        case 'gt':
+            return '>'
+        case 'lt':
+            return '<'
+    }
+}
 
 const portfolioEntryToProjectSearchResult = (
     entry: PortfolioCollectionItem,
@@ -24,6 +50,7 @@ const portfolioEntryToProjectSearchResult = (
         latestUpdate: entry.date
             ? Temporal.Instant.from(entry.date)
             : Temporal.Instant.fromEpochMilliseconds(0),
+        tags: entry.technologies ?? [],
     }
 }
 
@@ -33,33 +60,124 @@ const repositoryEntryToProjectSearchResult = (repo: Repository): ProjectSearchRe
         description: repo.description,
         forgeId: repo.name!,
         latestUpdate: Temporal.Instant.from(repo.updated_at!),
+        tags: [repo.language, ...(repo.topics ?? [])]
+            .filter((tag) => typeof tag === 'string')
+            .map((tag) => tag.toLowerCase()),
     }
 }
 
-const getTechnologyPortfolioEntries = async (
+const findPortfolioEntries = async (
     event: H3Event,
-    tech: string,
-): Promise<PortfolioCollectionItem[]> => {
-    const key = `portfolio_tech_${tech}`
-    if (!import.meta.dev) {
-        if (await kv.hasItem(key)) {
-            return (await kv.getItem(key)) as PortfolioCollectionItem[]
-        }
-    }
+    filter: ProjectFilter,
+): Promise<ProjectSearchResult[]> => {
+    let query = queryCollection(event, 'portfolio')
 
-    const entries = await queryCollection(event, 'portfolio')
-        .all()
-        .then((allEntries) =>
-            allEntries.filter(
-                (entry) => entry.technologies !== null && entry.technologies!.includes(tech),
-            ),
+    if (filter.field === 'latestUpdate') {
+        query = query.where(
+            'date',
+            queryFilterOperatorToSqlOperator(filter.operator!),
+            filter.value,
         )
-
-    if (!import.meta.dev) {
-        await kv.setItem(key, entries)
     }
 
-    return entries
+    let items = await query.all()
+
+    if (filter.field === 'technology') {
+        items = items.filter((item) => item.technologies?.includes(filter.value))
+    }
+    return await Promise.all(
+        items.map(portfolioEntryToProjectSearchResult).map(async (entry) => {
+            if (!entry.forgeId) return entry
+
+            const repo = await repoGet({
+                path: { owner: useRuntimeConfig().public.primaryUser, repo: entry.forgeId },
+            })
+
+            if (repo.error) {
+                entry.forgeId = undefined
+                return entry
+            }
+
+            if (repo.data?.updated_at !== undefined) {
+                entry.latestUpdate = Temporal.Instant.from(repo.data.updated_at)
+            }
+
+            return entry
+        }),
+    )
+}
+
+const findRepositories = async (
+    event: H3Event,
+    filter: ProjectFilter,
+    exclude?: Set<string | undefined>,
+): Promise<ProjectSearchResult[]> => {
+    let repos: Repository[] = []
+    if (filter.field !== 'technology') {
+        const result = await userListRepos({
+            path: { username: useRuntimeConfig().public.primaryUser },
+        })
+
+        if (result.error) {
+            throw result.error
+        } else {
+            repos = result.data
+        }
+    } else {
+        const repoMap = new Map<string, Repository>()
+
+        const topicRepos = await getTopicRepos(filter.value as string)
+        topicRepos.forEach((repo) => repoMap.set(repo.name!, repo))
+        const langRepos = await getLanguageRepos(filter.value as string)
+        langRepos.forEach((repo) => repoMap.set(repo.name!, repo))
+
+        repos = repoMap.values().toArray()
+    }
+
+    if (exclude !== undefined) {
+        repos = repos.filter((repo) => !exclude.has(repo.name!))
+    }
+
+    if (filter.field === 'archived') {
+        const expected = filter.value == 1
+        repos = repos.filter((repo) => repo.archived === expected)
+    }
+
+    if (filter.field === 'latestUpdate') {
+        const sourceTime = Temporal.Instant.from(filter.value)
+        repos = repos.filter((repo) => {
+            const cmp = Temporal.Instant.compare(sourceTime, repo.updated_at!)
+            switch (filter.operator!) {
+                case 'eq':
+                    return cmp === 0
+                case 'ge':
+                    return cmp >= 0
+                case 'le':
+                    return cmp <= 0
+                case 'gt':
+                    return cmp > 0
+                case 'lt':
+                    return cmp < 0
+            }
+        })
+    }
+
+    return await Promise.all(
+        repos.map(repositoryEntryToProjectSearchResult).map(async (project) => {
+            if (project.portfolioId !== undefined) return project
+
+            const entryWithRepository = await queryCollection(event, 'portfolio')
+                .where('repository', '=', project.forgeId)
+                .first()
+
+            if (entryWithRepository) {
+                project.portfolioId = entryWithRepository.path
+                return project
+            }
+
+            return project
+        }),
+    )
 }
 
 const getTopicRepos = async (tech: string) => {
@@ -85,94 +203,63 @@ const getLanguageRepos = defineCachedFunction(
     { maxAge: 60 * 60, getKey: (tech) => `getLanguageRepos_${tech}` },
 )
 
-export default defineEventHandler(async (event): Promise<ProjectSearchResult[]> => {
-    const request = await getValidatedQuery(event, (body) => searchRequestSchema.parse(body))
-
-    let portfolioEntries = await getTechnologyPortfolioEntries(event, request.technology!).then(
-        (entries) => entries.map(portfolioEntryToProjectSearchResult),
-    )
-
-    portfolioEntries = await Promise.all(
-        portfolioEntries.map(async (entry) => {
-            if (!entry.forgeId) return entry
-
-            const repo = await repoGet({
-                path: { owner: useRuntimeConfig().public.primaryUser, repo: entry.forgeId },
-            })
-
-            if (repo.error) {
-                entry.forgeId = undefined
-                return entry
-            }
-
-            if (repo.data?.updated_at !== undefined) {
-                entry.latestUpdate = Temporal.Instant.from(repo.data.updated_at)
-            }
-
-            return entry
-        }),
-    )
+export const searchProjects = async (
+    event: H3Event,
+    filter?: ProjectFilter,
+    orderBy?: string,
+    orderDirection?: 'asc' | 'desc',
+): Promise<ProjectSearchResult[]> => {
+    let portfolioEntries = await findPortfolioEntries(event, filter ?? {})
 
     const getAlreadySeenRepoNames = (projects: ProjectSearchResult[]) =>
         new Set(projects.filter((proj) => proj.forgeId !== undefined).map((proj) => proj.forgeId))
 
-    const forgeProjectsHandler = async (projects: Repository[]): Promise<ProjectSearchResult[]> => {
-        return await Promise.all(
-            projects
-                .filter((repo) => !alreadySeenRepos.has(repo.name))
-                .map(repositoryEntryToProjectSearchResult)
-                .map(async (project) => {
-                    if (project.portfolioId !== undefined) return project
-
-                    const entryWithRepository = await queryCollection(event, 'portfolio')
-                        .where('repository', '=', project.forgeId)
-                        .first()
-
-                    if (entryWithRepository) {
-                        project.portfolioId = entryWithRepository.path
-                        return project
-                    }
-
-                    return project
-                }),
-        )
-    }
-
-    let alreadySeenRepos = getAlreadySeenRepoNames(portfolioEntries)
-    const topicRepos = await getTopicRepos(request.technology!)
-
-    portfolioEntries.push(...(await forgeProjectsHandler(topicRepos)))
-
-    alreadySeenRepos = getAlreadySeenRepoNames(portfolioEntries)
-
-    const languageRepos = await getLanguageRepos(request.technology!)
-
-    portfolioEntries.push(...(await forgeProjectsHandler(languageRepos)))
+    portfolioEntries.push(
+        ...(await findRepositories(event, filter ?? {}, getAlreadySeenRepoNames(portfolioEntries))),
+    )
 
     // TODO: integrate wakatime
 
     type OrderFunction = (a: ProjectSearchResult, b: ProjectSearchResult) => number
 
     const orderFunction = (): OrderFunction => {
-        if (request.order === 'title') {
-            const retval = request.orderDirection === 'asc' ? -1 : 1
+        if (orderBy === 'title') {
+            const retval = orderDirection === 'asc' ? -1 : 1
             return (a, b) => {
                 if (a.title === b.title) return 0
                 if (a.title < b.title) return retval
                 return retval * -1
             }
-        } else if (request.order === 'latestUpdate') {
-            if (request.orderDirection === 'asc')
+        } else if (orderBy === 'latestUpdate') {
+            if (orderDirection === 'asc')
                 return (a, b) => Temporal.Instant.compare(a.latestUpdate!, b.latestUpdate!)
             else return (b, a) => Temporal.Instant.compare(a.latestUpdate!, b.latestUpdate!)
-        } else if (request.order === 'lastUsed') {
-            if (request.orderDirection === 'asc')
+        } else if (orderBy === 'lastUsed') {
+            if (orderDirection === 'asc')
                 return (a, b) => Temporal.Instant.compare(a.lastUsed!, b.lastUsed!)
             else return (b, a) => Temporal.Instant.compare(a.lastUsed!, b.lastUsed!)
         }
 
-        throw new Error('Unknown order key: ' + request.order)
+        throw new Error('Unknown order key: ' + orderBy)
     }
 
-    return portfolioEntries.sort(orderFunction())
+    console.log(portfolioEntries)
+
+    if (orderBy === undefined) {
+        return portfolioEntries
+    } else {
+        return portfolioEntries.sort(orderFunction())
+    }
+}
+
+export default defineEventHandler(async (event): Promise<ProjectSearchResult[]> => {
+    const request = await getValidatedQuery(event, (body) => searchRequestSchema.parse(body))
+
+    const filter: ProjectFilter = {
+        field: request.filterBy,
+        operator: request.filterOperator,
+        value: request.filterValue,
+    }
+
+    return searchProjects(event, filter, request.order, request.orderDirection)
 })

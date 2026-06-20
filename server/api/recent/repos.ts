@@ -1,5 +1,6 @@
 import { userListRepos } from '~~/lib/generated'
 import { Temporal } from '@js-temporal/polyfill'
+import { searchProjects } from '../project/search'
 
 export const getRepos = async () => {
     const repos = await userListRepos({

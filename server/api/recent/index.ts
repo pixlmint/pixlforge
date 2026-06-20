@@ -1,15 +1,20 @@
 import type { H3Event } from 'h3'
 import { getIssues } from './issues'
-import { getRepos } from './repos'
 import { getActions } from './actions'
 import { getCommits } from './commits'
 import { getActivity } from './activity'
+import { searchProjects } from '../project/search'
 
 export default defineCachedEventHandler(
-    async () => {
+    async (event) => {
         return {
             issues: await getIssues(),
-            repos: await getRepos(),
+            repos: await searchProjects(
+                event,
+                { field: 'archived', value: 0 },
+                'latestUpdate',
+                'desc',
+            ),
             actions: await getActions(),
             commits: await getCommits(),
             activity: await getActivity(),
@@ -17,6 +22,6 @@ export default defineCachedEventHandler(
     },
     {
         maxAge: 1,
-        getKey: (event: H3Event) => event.path + 'v5',
+        getKey: (event: H3Event) => event.path + 'v6',
     },
 )

@@ -22,4 +22,5 @@ export type ProjectSearchResult = {
     forgeId?: string
     latestUpdate?: Temporal.Instant
     lastUsed?: Temporal.Instant
+    tags: string[]
 }
