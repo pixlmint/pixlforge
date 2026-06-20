@@ -4,6 +4,11 @@ export default defineNuxtConfig({
 
     runtimeConfig: {
         forgejoRenderMarkdownToken: '',
+        wakapi: {
+            baseUrl: '',
+            user: '',
+            apiKey: '',
+        },
         public: {
             forgejoBaseUrl: '',
             primaryUser: '',
