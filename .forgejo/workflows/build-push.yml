@@ -24,3 +24,11 @@ jobs:
           push: true
           context: .
           tags: registry.pixlmint.ch/pixlforge:latest
+      - name: Trigger container update on unraid host
+        run: |
+          mkdir -p ~/.ssh
+          echo "$UNRAID_SSH" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ env.UNRAID_IP }} >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -o StrictHostKeyChecking=no root@${{ env.UNRAID_IP }}
+
