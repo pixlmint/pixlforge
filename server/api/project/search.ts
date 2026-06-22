@@ -25,6 +25,16 @@ type ProjectFilter = {
     value?: any
 }
 
+type OrderConfig = {
+    field: 'technology' | 'latestUpdate' | 'lastUsed' | 'title'
+    direction?: 'asc' | 'desc'
+}
+
+type SearchOptions = {
+    filter?: ProjectFilter
+    order?: OrderConfig
+}
+
 const queryFilterOperatorToSqlOperator = (op: QueryOperator): SQLOperator => {
     switch (op) {
         case 'eq':
@@ -217,28 +227,32 @@ const populateWakatimeData = async (projects: ProjectSearchResult[]): Promise<vo
 
         if (lastUsed !== undefined) {
             project.lastUsed = lastUsed
+        } else if (project.latestUpdate !== undefined) {
+            project.lastUsed = project.latestUpdate
         }
     }
 }
 
 export const searchProjects = async (
     event: H3Event,
-    filter?: ProjectFilter,
-    orderBy?: string,
-    orderDirection?: 'asc' | 'desc',
+    options: SearchOptions,
 ): Promise<ProjectSearchResult[]> => {
-    let portfolioEntries = await findPortfolioEntries(event, filter ?? {})
+    let portfolioEntries = await findPortfolioEntries(event, options.filter ?? {})
 
     const getAlreadySeenRepoNames = (projects: ProjectSearchResult[]) =>
         new Set(projects.filter((proj) => proj.forgeId !== undefined).map((proj) => proj.forgeId))
 
     portfolioEntries.push(
-        ...(await findRepositories(event, filter ?? {}, getAlreadySeenRepoNames(portfolioEntries))),
+        ...(await findRepositories(
+            event,
+            options.filter ?? {},
+            getAlreadySeenRepoNames(portfolioEntries),
+        )),
     )
 
     await populateWakatimeData(portfolioEntries)
 
-    if (orderBy === undefined) {
+    if (options.order?.field === undefined) {
         return portfolioEntries
     } else {
         type OrderFunction = (a: ProjectSearchResult, b: ProjectSearchResult) => number
@@ -257,23 +271,24 @@ export const searchProjects = async (
                 return Temporal.Instant.compare(a!, b!)
             }
 
-            if (orderBy === 'title') {
-                const retval = orderDirection === 'asc' ? -1 : 1
+            if (options.order!.field === 'title') {
+                const retval = options.order?.direction === 'asc' ? -1 : 1
                 return (a, b) => {
                     if (a.title === b.title) return 0
                     if (a.title < b.title) return retval
                     return retval * -1
                 }
-            } else if (orderBy === 'latestUpdate') {
-                if (orderDirection === 'asc')
+            } else if (options.order?.field === 'latestUpdate') {
+                if (options.order.direction === 'asc')
                     return (a, b) => compareDates(a.latestUpdate, b.latestUpdate)
                 else return (b, a) => compareDates(a.latestUpdate, b.latestUpdate)
-            } else if (orderBy === 'lastUsed') {
-                if (orderDirection === 'asc') return (a, b) => compareDates(a.lastUsed, b.lastUsed)
+            } else if (options.order?.field === 'lastUsed') {
+                if (options.order.direction === 'asc')
+                    return (a, b) => compareDates(a.lastUsed, b.lastUsed)
                 else return (b, a) => compareDates(a.lastUsed, b.lastUsed)
             }
 
-            throw new Error('Unknown order key: ' + orderBy)
+            throw new Error('Unknown order key: ' + options.order?.field)
         }
         return portfolioEntries.sort(orderFunction())
     }
@@ -282,11 +297,17 @@ export const searchProjects = async (
 export default defineEventHandler(async (event): Promise<ProjectSearchResult[]> => {
     const request = await getValidatedQuery(event, (body) => searchRequestSchema.parse(body))
 
-    const filter: ProjectFilter = {
-        field: request.filterBy,
-        operator: request.filterOperator,
-        value: request.filterValue,
+    const options: SearchOptions = {
+        filter: {
+            field: request.filterBy,
+            operator: request.filterOperator,
+            value: request.filterValue,
+        },
+        order: {
+            field: request.order,
+            direction: request.orderDirection,
+        },
     }
 
-    return searchProjects(event, filter, request.order, request.orderDirection)
+    return searchProjects(event, options)
 })
