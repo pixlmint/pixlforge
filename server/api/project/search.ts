@@ -227,7 +227,6 @@ export const searchProjects = async (
     orderBy?: string,
     orderDirection?: 'asc' | 'desc',
 ): Promise<ProjectSearchResult[]> => {
-    console.profile('searchProjects')
     let portfolioEntries = await findPortfolioEntries(event, filter ?? {})
 
     const getAlreadySeenRepoNames = (projects: ProjectSearchResult[]) =>
@@ -240,7 +239,6 @@ export const searchProjects = async (
     await populateWakatimeData(portfolioEntries)
 
     if (orderBy === undefined) {
-        console.profileEnd('searchProjects')
         return portfolioEntries
     } else {
         type OrderFunction = (a: ProjectSearchResult, b: ProjectSearchResult) => number
@@ -277,15 +275,12 @@ export const searchProjects = async (
 
             throw new Error('Unknown order key: ' + orderBy)
         }
-        console.profileEnd('searchProjects')
         return portfolioEntries.sort(orderFunction())
     }
 }
 
 export default defineEventHandler(async (event): Promise<ProjectSearchResult[]> => {
     const request = await getValidatedQuery(event, (body) => searchRequestSchema.parse(body))
-
-    console.log(request)
 
     const filter: ProjectFilter = {
         field: request.filterBy,
