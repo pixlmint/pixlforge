@@ -67,5 +67,9 @@ export default defineNuxtConfig({
         sources: ['/api/sitemap'],
     },
 
+    experimental: {
+        payloadExtraction: true,
+    },
+
     modules: ['@nuxthub/core', '@nuxt/content', '@nuxtjs/sitemap'],
 })
