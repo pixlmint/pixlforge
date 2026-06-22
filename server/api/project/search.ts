@@ -6,7 +6,7 @@ import { repoGet, repoSearch, userListRepos } from '~~/lib/forgejo'
 import type { Repository } from '~~/lib/forgejo'
 import type { PortfolioCollectionItem, SQLOperator } from '@nuxt/content'
 import type { ProjectSearchResult } from '~~/shared/types'
-import { getWakatimeProject, getWakatimeProjects } from '~~/lib/wakapi'
+import { createWakapiWrapper } from '~~/server/lib/wakapi'
 
 const op = z.literal(['eq', 'ge', 'le', 'gt', 'lt'])
 type QueryOperator = 'eq' | 'ge' | 'le' | 'gt' | 'lt'
@@ -209,35 +209,14 @@ const getLanguageRepos = defineCachedFunction(
     { maxAge: 60 * 60, getKey: (tech) => `getLanguageRepos_${tech}` },
 )
 
-const getWakatimeProjectNames = defineCachedFunction(
-    async (): Promise<string[]> => {
-        const projects = await getWakatimeProjects({
-            path: { user: 'current' },
-        })
-
-        if (projects.error || projects.data?.data === undefined) return []
-
-        return projects.data.data.map((project) => project.name!)
-    },
-    { maxAge: 60 * 60 * 24, getKey: () => 'wakatime_projects' },
-)
-
 const populateWakatimeData = async (projects: ProjectSearchResult[]): Promise<void> => {
-    const wakatimeProjects = await getWakatimeProjectNames()
+    const waka = await createWakapiWrapper()
 
     for (const project of projects) {
-        if (!wakatimeProjects.includes(project.title)) continue
+        const lastUsed = waka.getLastUsed(project.title)
 
-        const wakaProject = await getWakatimeProject({
-            path: { user: 'current', id: project.title },
-        })
-        if (wakaProject.error) {
-            console.error(wakaProject.error)
-            continue
-        }
-
-        if (wakaProject.data?.data?.last_heartbeat_at !== undefined) {
-            project.lastUsed = Temporal.Instant.from(wakaProject.data?.data?.last_heartbeat_at)
+        if (lastUsed !== undefined) {
+            project.lastUsed = lastUsed
         }
     }
 }
