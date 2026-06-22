@@ -33,5 +33,5 @@ jobs:
           echo "$UNRAID_SSH" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H $UNRAID_IP >> ~/.ssh/known_hosts 2>/dev/null
-          ssh -o StrictHostKeyChecking=no root@$UNRAID_IP
+          ssh -t -o StrictHostKeyChecking=no root@$UNRAID_IP
 
