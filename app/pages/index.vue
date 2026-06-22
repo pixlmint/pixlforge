@@ -1,6 +1,6 @@
 <template>
     <PageWithLayout :columns="columns" />
-    {{ version }}
+    version: {{ version }}
 </template>
 
 <script lang="ts" setup>
