@@ -1,6 +1,6 @@
 <template>
     <PageWithLayout :columns="columns" />
-    version: {{ version }}
+    <Footer />
 </template>
 
 <script lang="ts" setup>
@@ -9,8 +9,6 @@ import Repositories from '~/components/root/Repositories.vue'
 import type { PageWithLayoutColumn } from '~/types'
 import { useForgeState } from '~~/composables/states'
 const recents = (await useFetch('/api/recent')).data.value!
-
-const version = useRuntimeConfig().public.version
 
 const forgeState = useForgeState()
 
