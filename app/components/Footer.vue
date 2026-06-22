@@ -4,7 +4,7 @@
             version:
             <a
                 target="_blank"
-                :href="`https://git.pixlmint.ch/pixlmint/pixlforge/commits/${version}`"
+                :href="`https://git.pixlmint.ch/pixlmint/pixlforge/commit/${version}`"
                 >{{ shortVersion }}</a
             >
         </div>
