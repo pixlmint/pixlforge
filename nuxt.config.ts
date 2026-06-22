@@ -20,6 +20,12 @@ export default defineNuxtConfig({
         '/api/*/*/commit-tree': {
             swr: 3600,
         },
+        '/repos/*': {
+            swr: 60 * 5,
+        },
+        '/portfolio/*': {
+            swr: 60 * 60 * 24,
+        },
     },
 
     vite: {
@@ -57,5 +63,9 @@ export default defineNuxtConfig({
         },
     },
 
-    modules: ['@nuxthub/core', '@nuxt/content'],
+    sitemap: {
+        sources: ['/api/sitemap'],
+    },
+
+    modules: ['@nuxthub/core', '@nuxt/content', '@nuxtjs/sitemap'],
 })

@@ -21,6 +21,7 @@
     "@js-temporal/polyfill": "^0.5.1",
     "@nuxt/content": "^3.14.0",
     "@nuxthub/core": "^0.10.7",
+    "@nuxtjs/sitemap": "^8.2.1",
     "better-sqlite3": "^12.11.1",
     "d3": "^7.9.0",
     "highlight.js": "^11.11.1",
