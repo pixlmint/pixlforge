@@ -17,9 +17,6 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
 
-      - name: test env
-        run: echo "${{ env.FORGEJO_SHA }}"
-
       - name: Build and push
         uses: docker/build-push-action@v7
         with:

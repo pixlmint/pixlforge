@@ -1,7 +1,5 @@
 FROM node:24-alpine AS build
 
-ARG VERSION=dev
-
 WORKDIR /app
 
 RUN corepack enable
@@ -15,6 +13,8 @@ COPY . ./
 RUN npm run build
 
 FROM node:24-alpine
+
+ARG VERSION=dev
 
 WORKDIR /app
 
