@@ -6,6 +6,7 @@ import { repoGet, repoSearch, userListRepos } from '~~/lib/forgejo'
 import type { Repository } from '~~/lib/forgejo'
 import type { PortfolioCollectionItem, SQLOperator } from '@nuxt/content'
 import type { ProjectSearchResult } from '~~/shared/types'
+import { getWakatimeProject, getWakatimeProjects } from '~~/lib/wakapi'
 
 const op = z.literal(['eq', 'ge', 'le', 'gt', 'lt'])
 type QueryOperator = 'eq' | 'ge' | 'le' | 'gt' | 'lt'
@@ -98,8 +99,13 @@ const findPortfolioEntries = async (
                 return entry
             }
 
+            if (repo.data?.name !== undefined) {
+                entry.title = repo.data.name
+            }
+
             if (repo.data?.updated_at !== undefined) {
                 entry.latestUpdate = Temporal.Instant.from(repo.data.updated_at)
+                entry.lastUsed = Temporal.Instant.from(repo.data.updated_at)
             }
 
             return entry
@@ -203,12 +209,46 @@ const getLanguageRepos = defineCachedFunction(
     { maxAge: 60 * 60, getKey: (tech) => `getLanguageRepos_${tech}` },
 )
 
+const getWakatimeProjectNames = defineCachedFunction(
+    async (): Promise<string[]> => {
+        const projects = await getWakatimeProjects({
+            path: { user: 'current' },
+        })
+
+        if (projects.error || projects.data?.data === undefined) return []
+
+        return projects.data.data.map((project) => project.name!)
+    },
+    { maxAge: 60 * 60 * 24, getKey: () => 'wakatime_projects' },
+)
+
+const populateWakatimeData = async (projects: ProjectSearchResult[]): Promise<void> => {
+    const wakatimeProjects = await getWakatimeProjectNames()
+
+    for (const project of projects) {
+        if (!wakatimeProjects.includes(project.title)) continue
+
+        const wakaProject = await getWakatimeProject({
+            path: { user: 'current', id: project.title },
+        })
+        if (wakaProject.error) {
+            console.error(wakaProject.error)
+            continue
+        }
+
+        if (wakaProject.data?.data?.last_heartbeat_at !== undefined) {
+            project.lastUsed = Temporal.Instant.from(wakaProject.data?.data?.last_heartbeat_at)
+        }
+    }
+}
+
 export const searchProjects = async (
     event: H3Event,
     filter?: ProjectFilter,
     orderBy?: string,
     orderDirection?: 'asc' | 'desc',
 ): Promise<ProjectSearchResult[]> => {
+    console.profile('searchProjects')
     let portfolioEntries = await findPortfolioEntries(event, filter ?? {})
 
     const getAlreadySeenRepoNames = (projects: ProjectSearchResult[]) =>
@@ -218,13 +258,28 @@ export const searchProjects = async (
         ...(await findRepositories(event, filter ?? {}, getAlreadySeenRepoNames(portfolioEntries))),
     )
 
-    // TODO: integrate wakatime
+    await populateWakatimeData(portfolioEntries)
 
     if (orderBy === undefined) {
+        console.profileEnd('searchProjects')
         return portfolioEntries
     } else {
         type OrderFunction = (a: ProjectSearchResult, b: ProjectSearchResult) => number
         const orderFunction = (): OrderFunction => {
+            const compareDates = (
+                a: Temporal.Instant | string | undefined,
+                b: Temporal.Instant | string | undefined,
+            ): number => {
+                if (a === undefined && b !== undefined) {
+                    return -1
+                } else if (a !== undefined && b === undefined) {
+                    return 1
+                } else if (a === undefined && b === undefined) {
+                    return 0
+                }
+                return Temporal.Instant.compare(a!, b!)
+            }
+
             if (orderBy === 'title') {
                 const retval = orderDirection === 'asc' ? -1 : 1
                 return (a, b) => {
@@ -234,22 +289,24 @@ export const searchProjects = async (
                 }
             } else if (orderBy === 'latestUpdate') {
                 if (orderDirection === 'asc')
-                    return (a, b) => Temporal.Instant.compare(a.latestUpdate!, b.latestUpdate!)
-                else return (b, a) => Temporal.Instant.compare(a.latestUpdate!, b.latestUpdate!)
+                    return (a, b) => compareDates(a.latestUpdate, b.latestUpdate)
+                else return (b, a) => compareDates(a.latestUpdate, b.latestUpdate)
             } else if (orderBy === 'lastUsed') {
-                if (orderDirection === 'asc')
-                    return (a, b) => Temporal.Instant.compare(a.lastUsed!, b.lastUsed!)
-                else return (b, a) => Temporal.Instant.compare(a.lastUsed!, b.lastUsed!)
+                if (orderDirection === 'asc') return (a, b) => compareDates(a.lastUsed, b.lastUsed)
+                else return (b, a) => compareDates(a.lastUsed, b.lastUsed)
             }
 
             throw new Error('Unknown order key: ' + orderBy)
         }
+        console.profileEnd('searchProjects')
         return portfolioEntries.sort(orderFunction())
     }
 }
 
 export default defineEventHandler(async (event): Promise<ProjectSearchResult[]> => {
     const request = await getValidatedQuery(event, (body) => searchRequestSchema.parse(body))
+
+    console.log(request)
 
     const filter: ProjectFilter = {
         field: request.filterBy,

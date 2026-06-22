@@ -7,7 +7,7 @@ export default defineNitroPlugin(async (nitroApp) => {
     })
 
     wakapiClient.setConfig({
-        baseUrl: useRuntimeConfig().wakapiBaseUrl + '/api',
-        auth: 'Bearer ' + useRuntimeConfig().wakapi.apiKey,
+        baseUrl: useRuntimeConfig().wakapi.baseUrl + '/api',
+        auth: 'Basic ' + btoa(useRuntimeConfig().wakapi.apiKey),
     })
 })

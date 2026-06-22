@@ -26,6 +26,10 @@ const columnConfiguration: TableColumnConfiguration[] = [
         member: 'title',
     },
     {
+        width: 'minmax(60px, 0.25fr)',
+        member: 'lastUsed',
+    },
+    {
         member: 'description',
         width: 'minmax(180px, 0.5fr)',
         cellClassList: 'data-col-secondary',
