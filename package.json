@@ -9,7 +9,8 @@
     "test": "jest",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare && npx simple-git-hooks"
+    "postinstall": "nuxt prepare && npx simple-git-hooks",
+    "build-preview": "nuxt build && nuxt preview"
   },
   "simple-git-hooks": {
     "pre-commit": "npx lint-staged"

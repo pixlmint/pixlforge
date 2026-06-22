@@ -17,14 +17,17 @@ export default defineNuxtConfig({
     },
 
     routeRules: {
-        '/api/*/*/commit-tree': {
-            swr: 3600,
+        '/': {
+            swr: true,
         },
-        '/repos/*': {
+        '/repos/**': {
             swr: 60 * 5,
         },
-        '/portfolio/*': {
+        '/portfolio/**': {
             swr: 60 * 60 * 24,
+        },
+        '/cv': {
+            prerender: true,
         },
     },
 
@@ -68,7 +71,7 @@ export default defineNuxtConfig({
     },
 
     experimental: {
-        payloadExtraction: true,
+        payloadExtraction: 'client',
     },
 
     modules: ['@nuxthub/core', '@nuxt/content', '@nuxtjs/sitemap'],
