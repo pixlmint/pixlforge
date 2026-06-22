@@ -12,6 +12,7 @@ export default defineNuxtConfig({
         public: {
             forgejoBaseUrl: '',
             primaryUser: '',
+            version: 'local',
         },
     },
 

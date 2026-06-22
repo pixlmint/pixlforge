@@ -1,5 +1,7 @@
 FROM node:24-alpine AS build
 
+ARG VERSION=dev
+
 WORKDIR /app
 
 RUN corepack enable
@@ -20,6 +22,7 @@ COPY --from=build /app/.output ./
 
 ENV PORT=80
 ENV HOST=0.0.0.0
+ENV NUXT_PUBLIC_VERSION=${VERSION}
 
 EXPOSE 80
 

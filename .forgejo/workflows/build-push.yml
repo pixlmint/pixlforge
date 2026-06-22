@@ -17,13 +17,15 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
 
-      
       - name: Build and push
         uses: docker/build-push-action@v7
         with:
           push: true
           context: .
           tags: registry.pixlmint.ch/pixlforge:latest
+          build-args:
+            VERSION=${{ env.FORGEJO_SHA }}
+
       - name: Trigger container update on unraid host
         env:
           UNRAID_SSH: ${{ secrets.UNRAID_SSH }}
