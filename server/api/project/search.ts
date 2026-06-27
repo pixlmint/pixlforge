@@ -128,7 +128,7 @@ interface ApiResponse<T> {
     error: any
 }
 
-const getAll = async <
+export const getAll = async <
     TResponse extends ApiResponse<any>,
     TOptions extends { query?: { limit?: number; page?: number } },
 >(

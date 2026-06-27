@@ -1,15 +1,15 @@
 import { repoListActivityFeeds, userListRepos } from '~~/lib/forgejo'
 import { Temporal } from '@js-temporal/polyfill'
-import type { Activity } from '~~/lib/forgejo'
+import type { Activity, Repository } from '~~/lib/forgejo'
 import type { ActivityContent, ActivityType } from '../types'
+import { getAll } from './project/search'
 
 export const getCombinedRepositoryFeed = async (
     op_types?: ActivityType[] | ((activity: Activity) => boolean),
 ) => {
-    const repos = await userListRepos({
+    const repos = (await getAll(userListRepos, {
         path: { username: useRuntimeConfig().public.primaryUser },
-        query: { limit: 500 },
-    })
+    })) as { error: { message: string } | undefined; data: Repository[] }
 
     if (repos.error) {
         throw repos.error.message
