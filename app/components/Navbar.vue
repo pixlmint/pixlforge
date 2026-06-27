@@ -15,7 +15,7 @@
         </div>
         <div class="navlinks">
             <NuxtLink to="/cv">CV</NuxtLink>
-            <a :href="forgejoUrl" title="Open Forgejo" target="_blank">
+            <a class="forgejo-link" :href="forgejoUrl" title="Open Forgejo" target="_blank">
                 <Icon icon="forgejo" />
             </a>
         </div>
@@ -69,6 +69,10 @@ const route = computed(() => {
     .navlinks {
         display: flex;
         gap: 0.5rem;
+    }
+
+    .forgejo-link img {
+        height: 1rem;
     }
 }
 </style>
