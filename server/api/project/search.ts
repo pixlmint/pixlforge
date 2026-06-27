@@ -123,6 +123,48 @@ const findPortfolioEntries = async (
     )
 }
 
+interface ApiResponse<T> {
+    data: T
+    error: any
+}
+
+const getAll = async <
+    TResponse extends ApiResponse<any>,
+    TOptions extends { query?: { limit?: number; page?: number } },
+>(
+    fn: (options: TOptions) => Promise<TResponse>,
+    options: TOptions,
+): Promise<TResponse> => {
+    let latestResponse: any[] = []
+
+    const fullResponse: TResponse = {
+        data: [] as any[],
+        error: undefined,
+    }
+
+    options.query ??= {}
+    options.query.page = 1
+    options.query.limit = 50
+
+    do {
+        const response = await fn(options)
+
+        if (response.error) throw response.error
+
+        latestResponse = response.data!
+
+        if (latestResponse.data !== undefined) {
+            latestResponse = latestResponse.data
+        }
+
+        fullResponse.data.push(...latestResponse)
+
+        options.query.page++
+    } while (latestResponse.length === 50)
+
+    return fullResponse
+}
+
 const findRepositories = async (
     event: H3Event,
     filter: ProjectFilter,
@@ -130,7 +172,7 @@ const findRepositories = async (
 ): Promise<ProjectSearchResult[]> => {
     let repos: Repository[] = []
     if (filter.field !== 'technology') {
-        const result = await userListRepos({
+        const result = await getAll(userListRepos, {
             path: { username: useRuntimeConfig().public.primaryUser },
         })
 
@@ -198,18 +240,19 @@ const findRepositories = async (
 
 const getTopicRepos = async (tech: string) => {
     // TODO: don't hardcode owner id
-    const results = await repoSearch({ query: { q: tech, topic: true, priority_owner_id: 1 } })
+    const results = await getAll(repoSearch, {
+        query: { q: tech, topic: true, priority_owner_id: 1 },
+    })
 
     if (results.error) throw results.error
 
-    return results.data.data!
+    return results.data
 }
 
 const getLanguageRepos = defineCachedFunction(
     async (tech: string) => {
-        const repos = await userListRepos({
+        const repos = await getAll(userListRepos, {
             path: { username: useRuntimeConfig().public.primaryUser },
-            query: { limit: 2000 },
         })
 
         if (repos.error) throw repos.error
