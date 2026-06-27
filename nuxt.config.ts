@@ -1,4 +1,27 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+
+let routeRules = {}
+
+if (!import.meta.dev) {
+    routeRules = {
+        '/': {
+            swr: true,
+        },
+        '/api/repo/readme': {
+            swr: 60 * 60,
+        },
+        '/repos/**': {
+            swr: 60 * 5,
+        },
+        '/portfolio/**': {
+            swr: 60 * 60 * 24,
+        },
+        '/cv': {
+            prerender: true,
+        },
+    }
+}
+
 export default defineNuxtConfig({
     compatibilityDate: '2025-07-15',
 
@@ -16,20 +39,11 @@ export default defineNuxtConfig({
         },
     },
 
-    routeRules: {
-        '/': {
-            swr: true,
-        },
-        '/repos/**': {
-            swr: 60 * 5,
-        },
-        '/portfolio/**': {
-            swr: 60 * 60 * 24,
-        },
-        '/cv': {
-            prerender: true,
-        },
+    app: {
+        pageTransition: { name: 'page', mode: 'default' },
     },
+
+    routeRules: routeRules,
 
     vite: {
         optimizeDeps: {
@@ -72,6 +86,7 @@ export default defineNuxtConfig({
 
     experimental: {
         payloadExtraction: 'client',
+        viewTransition: false,
     },
 
     modules: ['@nuxthub/core', '@nuxt/content', '@nuxtjs/sitemap'],

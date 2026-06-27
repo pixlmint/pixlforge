@@ -6,20 +6,11 @@
             :key="index"
             :style="`--content-column-width: ${col.width}`"
         >
-            <div
+            <LayoutItemBaseComponentWrapper
                 v-for="(component, _) in col.components"
                 :key="component.title"
-                class="column-item"
-            >
-                <div class="item-header monospaced">
-                    <h2>
-                        {{ component.title }}
-                    </h2>
-                </div>
-                <div class="item-content">
-                    <component :is="component.content" />
-                </div>
-            </div>
+                :component="component"
+            />
         </div>
     </div>
 </template>

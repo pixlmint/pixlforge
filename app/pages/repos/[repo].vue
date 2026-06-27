@@ -9,8 +9,11 @@
 <script setup lang="ts">
 import CommitTree from '~/components/repo/commit-tree.vue'
 import IssueList from '~/components/repo/issue-list.vue'
+import ReadmeHead from '~/components/repo/readme-head.vue'
 import Readme from '~/components/repo/readme.vue'
 import { useForgeState } from '~~/composables/states'
+import type { Issue } from '~~/lib/forgejo'
+import type { HistoryCommit, RepoReadme } from '~~/shared/types'
 
 const route = useRoute()
 
@@ -22,36 +25,50 @@ onMounted(() => {
     forgeState.value!.viewingRepo = repo.value as string
 })
 
-const { data } = await useFetch('/api/repo', {
-    query: { repo: route.params.repo },
-})
+const readmeResponse = await useFetch('/api/repo/readme', { query: { repo: repo.value } })
+const readme = readmeResponse.data!.value as RepoReadme
+const contentUsingReadmeMode = ref(readme.portfolio !== null && readme.portfolio !== undefined)
+provide('readmeModeState', contentUsingReadmeMode)
 
-const columns = computed(() => {
-    if (data.value === undefined) return []
-
-    return [
-        {
-            width: '70vw',
-            components: [
-                {
-                    title: 'readme',
-                    content: h(Readme, { readme: data.value.readme }),
-                },
-                {
-                    title: 'commits',
-                    content: h(CommitTree, { commits: data.value.commits }),
-                },
-            ],
-        },
-        {
-            width: '30vw',
-            components: [
-                {
-                    title: 'issues',
-                    content: h(IssueList, { issues: data.value.issues }),
-                },
-            ],
-        },
-    ]
-})
+const columns = [
+    {
+        width: '70vw',
+        components: [
+            {
+                title: 'readme',
+                createHeading: () =>
+                    h(ReadmeHead, {
+                        readme: readme,
+                    }),
+                content: h(Readme, {
+                    readme: readme,
+                }),
+            },
+            {
+                title: 'commits',
+                loadContent: () =>
+                    useFetch('/api/repo/commitGraph', {
+                        query: { repo: repo.value },
+                        server: false,
+                    }),
+                createComponent: (commits: HistoryCommit[]) => h(CommitTree, { commits }),
+            },
+        ],
+    },
+    {
+        width: '30vw',
+        components: [
+            {
+                title: 'issues',
+                loadContent: () =>
+                    useFetch('/api/repo/latestIssues', {
+                        query: { repo: repo.value },
+                        server: false,
+                    }),
+                createComponent: (issues: Issue[]) => h(IssueList, { issues }),
+            },
+        ],
+    },
+]
+// })
 </script>

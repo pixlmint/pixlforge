@@ -24,3 +24,9 @@ export type ProjectSearchResult = {
     lastUsed?: Temporal.Instant
     tags: string[]
 }
+
+type RepoReadme = {
+    raw?: string
+    html?: string
+    portfolio?: PortfolioCollectionItem | null
+}
