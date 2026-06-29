@@ -31,6 +31,7 @@ export default defineNuxtConfig({
             baseUrl: '',
             user: '',
             apiKey: '',
+            frecencyNumDays: 90,
         },
         public: {
             forgejoBaseUrl: '',

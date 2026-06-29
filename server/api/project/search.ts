@@ -1,7 +1,6 @@
 import z from 'zod'
 import { Temporal } from '@js-temporal/polyfill'
 import type { H3Event } from 'h3'
-import { kv } from '@nuxthub/kv'
 import { repoGet, repoSearch, userListRepos } from '~~/lib/forgejo'
 import type { Repository } from '~~/lib/forgejo'
 import type { PortfolioCollectionItem, SQLOperator } from '@nuxt/content'
@@ -12,7 +11,7 @@ const op = z.literal(['eq', 'ge', 'le', 'gt', 'lt'])
 type QueryOperator = 'eq' | 'ge' | 'le' | 'gt' | 'lt'
 
 const searchRequestSchema = z.object({
-    order: z.literal(['title', 'latestUpdate', 'lastUsed']).default('title'),
+    order: z.literal(['title', 'latestUpdate', 'lastUsed', 'lastUsedFrecency']).default('title'),
     orderDirection: z.literal(['asc', 'desc']).default('asc'),
     filterBy: z.literal(['technology', 'archived', 'latestUpdate', 'lastUsed']).optional(),
     filterOperator: op.optional(),
@@ -26,7 +25,7 @@ type ProjectFilter = {
 }
 
 type OrderConfig = {
-    field: 'technology' | 'latestUpdate' | 'lastUsed' | 'title'
+    field: 'technology' | 'latestUpdate' | 'lastUsedFrecency' | 'lastUsed' | 'title'
     direction?: 'asc' | 'desc'
 }
 
@@ -299,7 +298,7 @@ export const searchProjects = async (
         return portfolioEntries
     } else {
         type OrderFunction = (a: ProjectSearchResult, b: ProjectSearchResult) => number
-        const orderFunction = (): OrderFunction => {
+        const orderFunction = async (): Promise<OrderFunction> => {
             const compareDates = (
                 a: Temporal.Instant | string | undefined,
                 b: Temporal.Instant | string | undefined,
@@ -329,11 +328,38 @@ export const searchProjects = async (
                 if (options.order.direction === 'asc')
                     return (a, b) => compareDates(a.lastUsed, b.lastUsed)
                 else return (b, a) => compareDates(a.lastUsed, b.lastUsed)
+            } else if (options.order?.field === 'lastUsedFrecency') {
+                const waka = await createWakapiWrapper()
+                const until = Temporal.Now.plainDateISO().subtract(
+                    new Temporal.Duration(0, 0, 0, useRuntimeConfig().wakapi.frecencyNumDays),
+                )
+                const heartbeats = await waka.loadHeartbeats(until)
+
+                const frecSortFunction: OrderFunction = (a, b) => {
+                    const aBeat = heartbeats[a.title]
+                    const bBeat = heartbeats[b.title]
+                    if (aBeat !== undefined) {
+                        if (bBeat !== undefined) {
+                            return aBeat - bBeat
+                        } else {
+                            return 1
+                        }
+                    } else if (bBeat !== undefined) {
+                        return -1
+                    } else if (a.lastUsed !== undefined && b.lastUsed !== undefined) {
+                        return compareDates(a.lastUsed, b.lastUsed)
+                    } else {
+                        return 0
+                    }
+                }
+
+                if (options.order.direction === 'asc') return (a, b) => frecSortFunction(a, b)
+                else return (a, b) => frecSortFunction(b, a)
             }
 
             throw new Error('Unknown order key: ' + options.order?.field)
         }
-        return portfolioEntries.sort(orderFunction())
+        return portfolioEntries.sort(await orderFunction())
     }
 }
 
