@@ -70,5 +70,4 @@ const columns = [
         ],
     },
 ]
-// })
 </script>
