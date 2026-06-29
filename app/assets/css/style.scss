@@ -56,10 +56,23 @@ code {
     .data-row {
         display: grid;
         border-bottom: 1px solid var(--color-border);
+        padding: 0.5rem 0;
 
         .data-entry {
             text-wrap: wrap;
             padding: 0 10px;
+        }
+
+        a, a:visited {
+            color: var(--color-text);
+            text-decoration: none;
+        }
+
+        &:hover {
+            background-color: #111;
+            a {
+                text-decoration: underline;
+            }
         }
     }
 

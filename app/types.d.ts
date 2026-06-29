@@ -5,6 +5,7 @@ export type TableColumnConfiguration = {
     member: string
     title?: string
     cellClassList?: string
+    transform?: (value: any) => any
 }
 
 export type BaseLayoutColumnComponent = {

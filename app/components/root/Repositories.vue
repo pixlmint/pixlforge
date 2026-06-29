@@ -9,7 +9,12 @@
                     value
                 }}</nuxt-link>
             </template>
-            <span :class="{ monospaced: col.member === 'tags' }" v-else>{{ value }}</span>
+            <span v-else>
+                <template v-if="col.transform !== undefined">
+                    {{ col.transform(value) }}
+                </template>
+                <template v-else>{{ value }}</template>
+            </span>
         </template>
     </Table>
 </template>
@@ -33,7 +38,8 @@ const columnConfiguration: TableColumnConfiguration[] = [
     {
         member: 'tags',
         width: 'minmax(80px, 0.25fr)',
-        cellClassList: 'data-col-secondary',
+        cellClassList: 'data-col-secondary monospaced',
+        transform: (value: string[]) => value[0],
     },
 ]
 </script>
