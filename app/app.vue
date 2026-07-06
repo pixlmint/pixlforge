@@ -3,6 +3,7 @@
     <div class="page">
         <NuxtPage />
     </div>
+    <Footer />
 </template>
 
 <style>

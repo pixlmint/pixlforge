@@ -1,6 +1,5 @@
 <template>
     <PageWithLayout :columns="content" />
-    <Footer />
 </template>
 
 <script lang="ts" setup>
