@@ -108,7 +108,7 @@ const emit = defineEmits<{
         &:after,
         &:before {
             left: 1px;
-            top: 5px;
+            top: 6px;
             width: 10px;
             height: 2px;
             background-color: white;
