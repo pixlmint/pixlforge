@@ -1,5 +1,5 @@
 <template>
-    <component v-if="!pending" :is="create" :data="content" />
+    <component v-if="!pending" :is="create" />
     <span class="monospaced color-secondary" v-else>Loading...</span>
 </template>
 
