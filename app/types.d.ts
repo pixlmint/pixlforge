@@ -32,6 +32,6 @@ export type LayoutColumnComponent = BaseLayoutColumnComponent &
 
 export type PageWithLayoutColumn = {
     columns: string[]
-    gridTemplateAreas: string | string[]
+    gridTemplateAreas: string[]
     components: LayoutColumnComponent[]
 }

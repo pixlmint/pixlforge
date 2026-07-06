@@ -10,7 +10,10 @@
             v-for="(component, _) in columns.components"
             :key="component.title"
             :component="component"
-            :style="{ 'grid-area': component.gridArea }"
+            :style="{
+                'grid-area': component.gridArea,
+                '--content-column-width': columns.columns[contentColumnWidths[component.gridArea]!],
+            }"
         />
     </div>
 </template>
@@ -34,6 +37,19 @@ const gridTemplateColumns = computed(() => {
     } else {
         return columns.columns.join(' ')
     }
+})
+
+const contentColumnWidths = computed(() => {
+    const ret = {} as Record<string, number>
+    for (let i = 0; i < columns.gridTemplateAreas.length; i++) {
+        const rowAreas = columns.gridTemplateAreas[i]!.split(' ')
+
+        for (const [index, cell] of rowAreas.entries()) {
+            ret[cell] = index
+        }
+    }
+
+    return ret
 })
 </script>
 

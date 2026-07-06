@@ -135,7 +135,7 @@ onMounted(() => {
         .commit-history-label-item {
             line-height: calc(var(--commit-history-item-height) / 2 - 5px);
             height: var(--commit-history-item-height);
-            width: calc(var(--content-column-width) - var(--commit-svg-width) - 2rem);
+            width: calc(var(--content-column-width) - max(var(--commit-svg-width), 60px) - 2rem);
         }
     }
 }
