@@ -107,6 +107,8 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
+@import 'assets/css/mixins';
+
 :root {
     --commit-history-item-height: 10px;
     --commit-svg-width: 10px;
@@ -135,7 +137,13 @@ onMounted(() => {
         .commit-history-label-item {
             line-height: calc(var(--commit-history-item-height) / 2 - 5px);
             height: var(--commit-history-item-height);
-            width: calc(var(--content-column-width) - max(var(--commit-svg-width), 60px) - 2rem);
+            width: calc(100vw - max(var(--commit-svg-width), 60px) - 2rem);
+
+            @include size-large {
+                width: calc(
+                    var(--content-column-width) - max(var(--commit-svg-width), 60px) - 2rem
+                );
+            }
         }
     }
 }
