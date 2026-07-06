@@ -54,7 +54,7 @@ const emit = defineEmits<{
 
     .crossmark {
         position: absolute;
-        top: 0.2rem;
+        top: 5px;
         left: 0;
         height: 12px;
         width: 12px;
@@ -107,8 +107,8 @@ const emit = defineEmits<{
     .crossmark {
         &:after,
         &:before {
-            left: 2px;
-            top: 6px;
+            left: 1px;
+            top: 5px;
             width: 10px;
             height: 2px;
             background-color: white;
