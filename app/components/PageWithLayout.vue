@@ -74,7 +74,6 @@ const gridTemplateColumns = computed(() => {
                 margin: 0;
             }
         }
-        // }
     }
 }
 </style>
