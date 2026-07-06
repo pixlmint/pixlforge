@@ -13,6 +13,8 @@ export type BaseLayoutColumnComponent = {
     heading?: VNode
     createHeading?: () => VNode
     createHeading?: (data: any) => VNode
+    columnIndex?: number
+    gridArea: string
 }
 
 export type SyncLayoutColumnComponent = BaseLayoutColumnComponent & {
@@ -24,11 +26,12 @@ export type AsyncLayoutColumnComponent = BaseLayoutColumnComponent & {
     createComponent: (data: any) => VNode
 }
 
-export type PageWithLayoutColumn = {
-    width: string
-    components: (AsyncLayoutColumnComponent | SyncLayoutColumnComponent)[]
-}
-
 export type LayoutColumnComponent = BaseLayoutColumnComponent &
     Partial<SyncLayoutColumnComponent> &
     Partial<AsyncLayoutColumnComponent>
+
+export type PageWithLayoutColumn = {
+    columns: string[]
+    gridTemplateAreas: string | string[]
+    components: LayoutColumnComponent[]
+}
