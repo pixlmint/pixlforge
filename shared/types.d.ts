@@ -22,7 +22,8 @@ export type ProjectSearchResult = {
     forgeId?: string
     latestUpdate?: Temporal.Instant
     lastUsed?: Temporal.Instant
-    tags: string[]
+    tags?: string[]
+    archived?: boolean
 }
 
 type RepoReadme = {

@@ -1,16 +1,18 @@
-import { Repository } from '~~/lib/forgejo'
 import { ProjectFilter } from '../types'
 import { Temporal } from '@js-temporal/polyfill'
-import { PortfolioCollectionItem } from '@nuxt/content'
+import type { ProjectSearchResult } from '~~/shared/types'
 
-export const isRepoIncluded = (repo: Repository, filter: ProjectFilter): boolean => {
-    if (filter.field === 'archived' && repo.archived === (filter.value === 1)) {
-        return true
+export const isProjectIncluded = (project: ProjectSearchResult, filter: ProjectFilter): boolean => {
+    if (filter.field === 'archived') {
+        return project.archived === (filter.value === 1)
     }
 
-    if (filter.field === 'latestUpdate') {
+    if (filter.field === 'latestUpdate' || filter.field === 'lastUsed') {
         const sourceTime = Temporal.Instant.from(filter.value)
-        const cmp = Temporal.Instant.compare(sourceTime, repo.updated_at!)
+        const cmp = Temporal.Instant.compare(
+            sourceTime,
+            filter.field === 'latestUpdate' ? project.latestUpdate! : project.lastUsed!,
+        )
 
         switch (filter.operator!) {
             case 'eq':
@@ -27,25 +29,35 @@ export const isRepoIncluded = (repo: Repository, filter: ProjectFilter): boolean
     }
 
     if (filter.field === 'tags') {
-        const tags = [repo.language, ...(repo.topics ?? [])].filter((s) => s !== undefined).sort()
         switch (filter.operator!) {
             case 'in':
-                return tags.includes(filter.value! as string)
+                if (project.tags === undefined) return false
+                return project.tags.includes(filter.value! as string)
             case 'nin':
-                return !tags.includes(filter.value! as string)
+                if (project.tags === undefined) return true
+                return !project.tags.includes(filter.value! as string)
             case 'eq':
-                return (filter.value! as string[]).sort().toString() === tags.toString()
+                return (
+                    (filter.value! as string[]).sort().toString() ===
+                    (project.tags ?? []).toString()
+                )
             case 'any':
-                return (filter.value! as string[]).filter((f) => tags.includes(f)).length > 0
+                return (
+                    (filter.value! as string[]).filter((f) => (project.tags ?? []).includes(f))
+                        .length > 0
+                )
             case 'all':
                 const filterValues = filter.value! as string[]
-                return filterValues.filter((f) => tags.includes(f)).length === filterValues.length
+                return (
+                    filterValues.filter((f) => (project.tags ?? []).includes(f)).length ===
+                    filterValues.length
+                )
         }
     }
 
     if (filter.and !== undefined) {
         for (const andFilter of filter.and) {
-            const res = isRepoIncluded(repo, andFilter)
+            const res = isProjectIncluded(project, andFilter)
             if (!res) {
                 return false
             }
@@ -56,7 +68,7 @@ export const isRepoIncluded = (repo: Repository, filter: ProjectFilter): boolean
 
     if (filter.or !== undefined) {
         for (const orFilter of filter.or) {
-            const res = isRepoIncluded(repo, orFilter)
+            const res = isProjectIncluded(project, orFilter)
             if (res) {
                 return true
             }

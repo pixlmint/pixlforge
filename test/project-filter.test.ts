@@ -1,76 +1,91 @@
-import type { Repository } from '../lib/forgejo/index'
-import { isRepoIncluded } from '../server/lib/search-utils'
+import type { ProjectSearchResult } from '../shared/types'
+import { isProjectIncluded } from '../server/lib/search-utils'
 import { Temporal } from '@js-temporal/polyfill'
 
 test('archive filter behavior', () => {
-    const testRepo: Repository = {
+    const testRepo: ProjectSearchResult = {
+        title: 'test',
         archived: true,
     }
 
-    expect(isRepoIncluded(testRepo, { field: 'archived', value: 0 })).toBeFalsy()
-    expect(isRepoIncluded(testRepo, { and: [{ field: 'archived', value: 0 }] })).toBeFalsy()
+    expect(isProjectIncluded(testRepo, { field: 'archived', value: 0 })).toBeFalsy()
+    expect(isProjectIncluded(testRepo, { and: [{ field: 'archived', value: 0 }] })).toBeFalsy()
 
-    expect(isRepoIncluded(testRepo, { field: 'archived', value: 1 })).toBeTruthy()
-    expect(isRepoIncluded(testRepo, { and: [{ field: 'archived', value: 1 }] })).toBeTruthy()
+    expect(isProjectIncluded(testRepo, { field: 'archived', value: 1 })).toBeTruthy()
+    expect(isProjectIncluded(testRepo, { and: [{ field: 'archived', value: 1 }] })).toBeTruthy()
 })
 
-test('latestUpdate filter behavior', () => {
+test('lastUsed filter behavior', () => {
     const testTimestamp = 17835089100000 // Wed, 08 Jul 2026 11:08:30 GMT
-    const testRepo: Repository = {
-        updated_at: Temporal.Instant.fromEpochMilliseconds(testTimestamp).toString(),
+    const testRepo: ProjectSearchResult = {
+        title: 'test',
+        lastUsed: Temporal.Instant.fromEpochMilliseconds(testTimestamp),
     }
 
     const ts = (change: number): string =>
         Temporal.Instant.fromEpochMilliseconds(testTimestamp + change).toString()
 
     expect(
-        isRepoIncluded(testRepo, { field: 'latestUpdate', operator: 'eq', value: ts(0) }),
+        isProjectIncluded(testRepo, { field: 'lastUsed', operator: 'eq', value: ts(0) }),
     ).toBeTruthy()
     expect(
-        isRepoIncluded(testRepo, { field: 'latestUpdate', operator: 'lt', value: ts(0) }),
+        isProjectIncluded(testRepo, { field: 'lastUsed', operator: 'lt', value: ts(0) }),
     ).toBeFalsy()
     expect(
-        isRepoIncluded(testRepo, { field: 'latestUpdate', operator: 'le', value: ts(0) }),
+        isProjectIncluded(testRepo, { field: 'lastUsed', operator: 'le', value: ts(0) }),
     ).toBeTruthy()
     expect(
-        isRepoIncluded(testRepo, { field: 'latestUpdate', operator: 'gt', value: ts(100) }),
+        isProjectIncluded(testRepo, { field: 'lastUsed', operator: 'gt', value: ts(100) }),
     ).toBeTruthy()
     expect(
-        isRepoIncluded(testRepo, { field: 'latestUpdate', operator: 'gt', value: ts(-100) }),
+        isProjectIncluded(testRepo, { field: 'lastUsed', operator: 'gt', value: ts(-100) }),
     ).toBeFalsy()
 })
 
 test('tag filtering behavior', () => {
-    const testRepo: Repository = {
-        topics: ['tag1', 'tag2'],
+    const testRepo: ProjectSearchResult = {
+        title: 'test',
+        tags: ['tag1', 'tag2'],
     }
 
-    expect(isRepoIncluded(testRepo, { field: 'tags', operator: 'in', value: 'tag1' })).toBeTruthy()
-    expect(isRepoIncluded(testRepo, { field: 'tags', operator: 'in', value: 'tag2' })).toBeTruthy()
-    expect(isRepoIncluded(testRepo, { field: 'tags', operator: 'in', value: 'tag3' })).toBeFalsy()
-
-    expect(isRepoIncluded(testRepo, { field: 'tags', operator: 'nin', value: 'tag3' })).toBeTruthy()
-    expect(isRepoIncluded(testRepo, { field: 'tags', operator: 'nin', value: 'tag1' })).toBeFalsy()
-
     expect(
-        isRepoIncluded(testRepo, { field: 'tags', operator: 'eq', value: ['tag1', 'tag2'] }),
+        isProjectIncluded(testRepo, { field: 'tags', operator: 'in', value: 'tag1' }),
     ).toBeTruthy()
     expect(
-        isRepoIncluded(testRepo, { field: 'tags', operator: 'eq', value: ['tag2', 'tag1'] }),
+        isProjectIncluded(testRepo, { field: 'tags', operator: 'in', value: 'tag2' }),
     ).toBeTruthy()
-    expect(isRepoIncluded(testRepo, { field: 'tags', operator: 'eq', value: ['tag2'] })).toBeFalsy()
+    expect(
+        isProjectIncluded(testRepo, { field: 'tags', operator: 'in', value: 'tag3' }),
+    ).toBeFalsy()
 
     expect(
-        isRepoIncluded(testRepo, { field: 'tags', operator: 'any', value: ['tag2'] }),
+        isProjectIncluded(testRepo, { field: 'tags', operator: 'nin', value: 'tag3' }),
     ).toBeTruthy()
     expect(
-        isRepoIncluded(testRepo, { field: 'tags', operator: 'all', value: ['tag2'] }),
+        isProjectIncluded(testRepo, { field: 'tags', operator: 'nin', value: 'tag1' }),
+    ).toBeFalsy()
+
+    expect(
+        isProjectIncluded(testRepo, { field: 'tags', operator: 'eq', value: ['tag1', 'tag2'] }),
     ).toBeTruthy()
     expect(
-        isRepoIncluded(testRepo, { field: 'tags', operator: 'all', value: ['tag2', 'tag2'] }),
+        isProjectIncluded(testRepo, { field: 'tags', operator: 'eq', value: ['tag2', 'tag1'] }),
     ).toBeTruthy()
     expect(
-        isRepoIncluded(testRepo, {
+        isProjectIncluded(testRepo, { field: 'tags', operator: 'eq', value: ['tag2'] }),
+    ).toBeFalsy()
+
+    expect(
+        isProjectIncluded(testRepo, { field: 'tags', operator: 'any', value: ['tag2'] }),
+    ).toBeTruthy()
+    expect(
+        isProjectIncluded(testRepo, { field: 'tags', operator: 'all', value: ['tag2'] }),
+    ).toBeTruthy()
+    expect(
+        isProjectIncluded(testRepo, { field: 'tags', operator: 'all', value: ['tag2', 'tag2'] }),
+    ).toBeTruthy()
+    expect(
+        isProjectIncluded(testRepo, {
             field: 'tags',
             operator: 'all',
             value: ['tag2', 'tag2', 'tag3'],
@@ -80,37 +95,57 @@ test('tag filtering behavior', () => {
 
 test('combined filters', () => {
     const testTimestamp = 17835089100000 // Wed, 08 Jul 2026 11:08:30 GMT
-    const testRepo: Repository = {
-        updated_at: Temporal.Instant.fromEpochMilliseconds(testTimestamp).toString(),
+    const testRepo: ProjectSearchResult = {
+        lastUsed: Temporal.Instant.fromEpochMilliseconds(testTimestamp),
+        title: 'test',
         archived: false,
+        tags: ['tag1', 'tag2'],
     }
 
     const ts = (change: number): string =>
         Temporal.Instant.fromEpochMilliseconds(testTimestamp + change).toString()
 
     expect(
-        isRepoIncluded(testRepo, {
+        isProjectIncluded(testRepo, {
             and: [
-                { field: 'latestUpdate', operator: 'eq', value: ts(0) },
+                { field: 'lastUsed', operator: 'eq', value: ts(0) },
                 { field: 'archived', value: 0 },
             ],
         }),
     ).toBeTruthy()
 
     expect(
-        isRepoIncluded(testRepo, {
+        isProjectIncluded(testRepo, {
             and: [
-                { field: 'latestUpdate', operator: 'eq', value: ts(0) },
+                { field: 'lastUsed', operator: 'eq', value: ts(0) },
                 { field: 'archived', value: 1 },
             ],
         }),
     ).toBeFalsy()
 
     expect(
-        isRepoIncluded(testRepo, {
+        isProjectIncluded(testRepo, {
             or: [
-                { field: 'latestUpdate', operator: 'eq', value: ts(0) },
+                { field: 'lastUsed', operator: 'eq', value: ts(0) },
                 { field: 'archived', value: 1 },
+            ],
+        }),
+    ).toBeTruthy()
+
+    expect(
+        isProjectIncluded(testRepo, {
+            and: [
+                { field: 'archived', value: 0 },
+                { field: 'tags', operator: 'nin', value: 'tag1' },
+            ],
+        }),
+    ).toBeFalsy()
+
+    expect(
+        isProjectIncluded(testRepo, {
+            and: [
+                { field: 'archived', value: 0 },
+                { field: 'tags', operator: 'nin', value: 'tag3' },
             ],
         }),
     ).toBeTruthy()

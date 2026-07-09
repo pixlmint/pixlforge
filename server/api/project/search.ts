@@ -7,9 +7,9 @@ import type { PortfolioCollectionItem, SQLOperator } from '@nuxt/content'
 import type { ProjectSearchResult } from '~~/shared/types'
 import { createWakapiWrapper } from '~~/server/lib/wakapi'
 import type { ProjectFilter, QueryOperator, SearchOptions } from '~~/server/types'
-import { isRepoIncluded } from '~~/server/lib/search-utils'
+import { isProjectIncluded } from '~~/server/lib/search-utils'
 
-const op = z.literal(['eq', 'ge', 'le', 'gt', 'lt'])
+const op = z.literal(['eq', 'ge', 'le', 'gt', 'lt', 'in', 'nin', 'any', 'all'])
 
 const filterBy = z.literal(['tags', 'archived', 'latestUpdate', 'lastUsed'])
 const filter = z.object({
@@ -27,9 +27,6 @@ const filter = z.object({
 const searchRequestSchema = z.object({
     order: z.literal(['title', 'latestUpdate', 'lastUsed', 'lastUsedFrecency']).default('title'),
     orderDirection: z.literal(['asc', 'desc']).default('asc'),
-    // filterBy: z.literal(['technology', 'archived', 'latestUpdate', 'lastUsed']).optional(),
-    // filterOperator: op.optional(),
-    // filterValue: z.any().optional(),
     filter: filter.optional(),
 })
 
@@ -60,6 +57,7 @@ const portfolioEntryToProjectSearchResult = (
             ? Temporal.Instant.from(entry.date)
             : Temporal.Instant.fromEpochMilliseconds(0),
         tags: entry.technologies ?? [],
+        archived: false,
     }
 }
 
@@ -72,6 +70,7 @@ const repositoryEntryToProjectSearchResult = (repo: Repository): ProjectSearchRe
         tags: [repo.language, ...(repo.topics ?? [])]
             .filter((tag) => typeof tag === 'string')
             .map((tag) => tag.toLowerCase()),
+        archived: repo.archived,
     }
 }
 
@@ -91,33 +90,38 @@ const findPortfolioEntries = async (
 
     let items = await query.all()
 
-    if (filter.field === 'tags') {
-        items = items.filter((item) => item.technologies?.includes(filter.value))
-    }
     return await Promise.all(
-        items.map(portfolioEntryToProjectSearchResult).map(async (entry) => {
-            if (!entry.forgeId) return entry
-
-            const repo = await repoGet({
-                path: { owner: useRuntimeConfig().public.primaryUser, repo: entry.forgeId },
+        items
+            .map(portfolioEntryToProjectSearchResult)
+            .filter((project) => {
+                return isProjectIncluded(project, filter)
             })
+            .map(async (entry) => {
+                if (!entry.forgeId) return entry
 
-            if (repo.error) {
-                entry.forgeId = undefined
+                const repo = await repoGet({
+                    path: { owner: useRuntimeConfig().public.primaryUser, repo: entry.forgeId },
+                })
+
+                if (repo.error) {
+                    entry.forgeId = undefined
+                    return entry
+                }
+
+                if (repo.data?.name !== undefined) {
+                    entry.title = repo.data.name
+                }
+
+                if (repo.data?.updated_at !== undefined) {
+                    entry.latestUpdate = Temporal.Instant.from(repo.data.updated_at)
+                    entry.lastUsed = Temporal.Instant.from(repo.data.updated_at)
+                }
+
                 return entry
-            }
-
-            if (repo.data?.name !== undefined) {
-                entry.title = repo.data.name
-            }
-
-            if (repo.data?.updated_at !== undefined) {
-                entry.latestUpdate = Temporal.Instant.from(repo.data.updated_at)
-                entry.lastUsed = Temporal.Instant.from(repo.data.updated_at)
-            }
-
-            return entry
-        }),
+            })
+            .filter(async (project) => {
+                return isProjectIncluded(await project, filter)
+            }),
     )
 }
 
@@ -163,10 +167,6 @@ export const getAll = async <
     return fullResponse
 }
 
-const applyRepoFilter = (repos: Repository[], filter: ProjectFilter): Repository[] => {
-    return repos.filter((repo) => isRepoIncluded(repo, filter))
-}
-
 const findRepositories = async (
     event: H3Event,
     filter: ProjectFilter,
@@ -187,23 +187,27 @@ const findRepositories = async (
         repos = repos.filter((repo) => !exclude.has(repo.name!))
     }
 
-    repos = applyRepoFilter(repos, filter)
-
     return await Promise.all(
-        repos.map(repositoryEntryToProjectSearchResult).map(async (project) => {
-            if (project.portfolioId !== undefined) return project
+        repos
+            .map(repositoryEntryToProjectSearchResult)
+            // XXX: Running filters here won't take wakapi-sourced data into account
+            .filter((project) => {
+                return isProjectIncluded(project, filter)
+            })
+            .map(async (project) => {
+                if (project.portfolioId !== undefined) return project
 
-            const entryWithRepository = await queryCollection(event, 'portfolio')
-                .where('repository', '=', project.forgeId)
-                .first()
+                const entryWithRepository = await queryCollection(event, 'portfolio')
+                    .where('repository', '=', project.forgeId)
+                    .first()
 
-            if (entryWithRepository) {
-                project.portfolioId = entryWithRepository.path
+                if (entryWithRepository) {
+                    project.portfolioId = entryWithRepository.path
+                    return project
+                }
+
                 return project
-            }
-
-            return project
-        }),
+            }),
     )
 }
 
