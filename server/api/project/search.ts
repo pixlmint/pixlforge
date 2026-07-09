@@ -6,33 +6,32 @@ import type { Repository } from '~~/lib/forgejo'
 import type { PortfolioCollectionItem, SQLOperator } from '@nuxt/content'
 import type { ProjectSearchResult } from '~~/shared/types'
 import { createWakapiWrapper } from '~~/server/lib/wakapi'
+import type { ProjectFilter, QueryOperator, SearchOptions } from '~~/server/types'
+import { isRepoIncluded } from '~~/server/lib/search-utils'
 
 const op = z.literal(['eq', 'ge', 'le', 'gt', 'lt'])
-type QueryOperator = 'eq' | 'ge' | 'le' | 'gt' | 'lt'
+
+const filterBy = z.literal(['tags', 'archived', 'latestUpdate', 'lastUsed'])
+const filter = z.object({
+    field: filterBy.optional(),
+    value: z.any().optional(),
+    operator: op.optional(),
+    get and() {
+        return z.array(filter).optional()
+    },
+    get or() {
+        return z.array(filter).optional()
+    },
+})
 
 const searchRequestSchema = z.object({
     order: z.literal(['title', 'latestUpdate', 'lastUsed', 'lastUsedFrecency']).default('title'),
     orderDirection: z.literal(['asc', 'desc']).default('asc'),
-    filterBy: z.literal(['technology', 'archived', 'latestUpdate', 'lastUsed']).optional(),
-    filterOperator: op.optional(),
-    filterValue: z.any().optional(),
+    // filterBy: z.literal(['technology', 'archived', 'latestUpdate', 'lastUsed']).optional(),
+    // filterOperator: op.optional(),
+    // filterValue: z.any().optional(),
+    filter: filter.optional(),
 })
-
-type ProjectFilter = {
-    field?: 'technology' | 'latestUpdate' | 'lastUsed' | 'archived'
-    operator?: QueryOperator
-    value?: any
-}
-
-type OrderConfig = {
-    field: 'technology' | 'latestUpdate' | 'lastUsedFrecency' | 'lastUsed' | 'title'
-    direction?: 'asc' | 'desc'
-}
-
-type SearchOptions = {
-    filter?: ProjectFilter
-    order?: OrderConfig
-}
 
 const queryFilterOperatorToSqlOperator = (op: QueryOperator): SQLOperator => {
     switch (op) {
@@ -92,7 +91,7 @@ const findPortfolioEntries = async (
 
     let items = await query.all()
 
-    if (filter.field === 'technology') {
+    if (filter.field === 'tags') {
         items = items.filter((item) => item.technologies?.includes(filter.value))
     }
     return await Promise.all(
@@ -164,60 +163,31 @@ export const getAll = async <
     return fullResponse
 }
 
+const applyRepoFilter = (repos: Repository[], filter: ProjectFilter): Repository[] => {
+    return repos.filter((repo) => isRepoIncluded(repo, filter))
+}
+
 const findRepositories = async (
     event: H3Event,
     filter: ProjectFilter,
     exclude?: Set<string | undefined>,
 ): Promise<ProjectSearchResult[]> => {
     let repos: Repository[] = []
-    if (filter.field !== 'technology') {
-        const result = await getAll(userListRepos, {
-            path: { username: useRuntimeConfig().public.primaryUser },
-        })
+    const result = await getAll(userListRepos, {
+        path: { username: useRuntimeConfig().public.primaryUser },
+    })
 
-        if (result.error) {
-            throw result.error
-        } else {
-            repos = result.data
-        }
+    if (result.error) {
+        throw result.error
     } else {
-        const repoMap = new Map<string, Repository>()
-
-        const topicRepos = await getTopicRepos(filter.value as string)
-        topicRepos.forEach((repo) => repoMap.set(repo.name!, repo))
-        const langRepos = await getLanguageRepos(filter.value as string)
-        langRepos.forEach((repo) => repoMap.set(repo.name!, repo))
-
-        repos = repoMap.values().toArray()
+        repos = result.data
     }
 
     if (exclude !== undefined) {
         repos = repos.filter((repo) => !exclude.has(repo.name!))
     }
 
-    if (filter.field === 'archived') {
-        const expected = filter.value == 1
-        repos = repos.filter((repo) => repo.archived === expected)
-    }
-
-    if (filter.field === 'latestUpdate') {
-        const sourceTime = Temporal.Instant.from(filter.value)
-        repos = repos.filter((repo) => {
-            const cmp = Temporal.Instant.compare(sourceTime, repo.updated_at!)
-            switch (filter.operator!) {
-                case 'eq':
-                    return cmp === 0
-                case 'ge':
-                    return cmp >= 0
-                case 'le':
-                    return cmp <= 0
-                case 'gt':
-                    return cmp > 0
-                case 'lt':
-                    return cmp < 0
-            }
-        })
-    }
+    repos = applyRepoFilter(repos, filter)
 
     return await Promise.all(
         repos.map(repositoryEntryToProjectSearchResult).map(async (project) => {
@@ -236,30 +206,6 @@ const findRepositories = async (
         }),
     )
 }
-
-const getTopicRepos = async (tech: string) => {
-    // TODO: don't hardcode owner id
-    const results = await getAll(repoSearch, {
-        query: { q: tech, topic: true, priority_owner_id: 1 },
-    })
-
-    if (results.error) throw results.error
-
-    return results.data
-}
-
-const getLanguageRepos = defineCachedFunction(
-    async (tech: string) => {
-        const repos = await getAll(userListRepos, {
-            path: { username: useRuntimeConfig().public.primaryUser },
-        })
-
-        if (repos.error) throw repos.error
-
-        return repos.data.filter((repo) => repo.language?.toLowerCase() === tech)
-    },
-    { maxAge: 60 * 60, getKey: (tech) => `getLanguageRepos_${tech}` },
-)
 
 const populateWakatimeData = async (projects: ProjectSearchResult[]): Promise<void> => {
     const waka = await createWakapiWrapper()
@@ -367,11 +313,7 @@ export default defineEventHandler(async (event): Promise<ProjectSearchResult[]> 
     const request = await getValidatedQuery(event, (body) => searchRequestSchema.parse(body))
 
     const options: SearchOptions = {
-        filter: {
-            field: request.filterBy,
-            operator: request.filterOperator,
-            value: request.filterValue,
-        },
+        filter: request.filter,
         order: {
             field: request.order,
             direction: request.orderDirection,

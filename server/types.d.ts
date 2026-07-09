@@ -98,3 +98,36 @@ export type SerializedRecentCommit = Serialize<RecentCommit>
 
 export type RecentActivity = AwaitedReturnTypeList<typeof getActivity>
 export type SerializedRecentActivity = Serialize<RecentActivity>
+
+export type QueryOperator = 'eq' | 'ge' | 'le' | 'gt' | 'lt'
+export type ListQueryOperator = 'in' | 'nin' | 'any' | 'all' | 'eq'
+
+type BaseProjectFilter = {
+    value?: any
+    and?: ProjectFilter[]
+    or?: ProjectFilter[]
+}
+
+export type ProjectFilter =
+    | (BaseProjectFilter & {
+          field?: 'tags'
+          operator?: 'in' | 'nin'
+      })
+    | (BaseProjectFilter & {
+          field?: 'tags'
+          operator?: 'any' | 'all' | 'eq'
+      })
+    | (BaseProjectFilter & {
+          field?: 'latestUpdate' | 'lastUsed' | 'archived'
+          operator?: QueryOperator
+      })
+
+export type OrderConfig = {
+    field: 'technology' | 'latestUpdate' | 'lastUsedFrecency' | 'lastUsed' | 'title'
+    direction?: 'asc' | 'desc'
+}
+
+export type SearchOptions = {
+    filter?: ProjectFilter
+    order?: OrderConfig
+}

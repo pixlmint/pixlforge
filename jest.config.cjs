@@ -5,9 +5,13 @@ module.exports = {
         '^~~(.*)$': '<rootDir>$1',
         '^#shared(.*)$': '<rootDir>/shared$1',
     },
-    globals: {
-        'ts-jest': {
-            tsconfig: '.nuxt/tsconfig.json',
-        },
+    transform: {
+        '^.+\\.tsx?$': [
+            'ts-jest',
+            {
+                tsconfig: 'tsconfig.test.json',
+                diagnostics: false,
+            },
+        ],
     },
 }
