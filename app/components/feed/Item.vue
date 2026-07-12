@@ -53,7 +53,7 @@
             </template>
         </div>
     </div>
-    <vue-json-pretty v-if="debug" :data="entry" />
+    <vue-json-pretty v-if="debug && isDebugBuild" :data="entry" />
 </template>
 
 <script lang="ts" setup>
@@ -61,4 +61,6 @@ import VueJsonPretty from 'vue-json-pretty'
 import type { SerializedRecentActivity } from '~~/server/types'
 
 const { entry, debug } = defineProps<{ entry: SerializedRecentActivity; debug: boolean }>()
+
+const isDebugBuild = import.meta.env.DEV
 </script>

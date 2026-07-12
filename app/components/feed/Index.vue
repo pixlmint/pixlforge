@@ -1,5 +1,5 @@
 <template>
-    <input type="checkbox" v-model="debug" />
+    <input v-if="isDebugBuild" type="checkbox" v-model="debugModeActive" />
     <div class="feed" v-for="(entry, index) in feed" :key="index">
         <FeedItem :entry="entry" :debug="debug" />
     </div>
@@ -9,5 +9,9 @@ import type { SerializedRecentActivity } from '~~/server/types'
 
 const { feed } = defineProps<{ feed: SerializedRecentActivity[] }>()
 
-const debug = ref(false)
+const isDebugBuild = import.meta.env.DEV
+
+const debugModeActive = ref(false)
+
+const debug = computed(() => isDebugBuild && debugModeActive.value)
 </script>
