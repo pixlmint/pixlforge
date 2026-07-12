@@ -37,6 +37,7 @@ export default defineNuxtConfig({
             forgejoBaseUrl: '',
             primaryUser: '',
             version: 'local',
+            buildDate: '1970-01-01',
         },
     },
 
