@@ -9,6 +9,9 @@
                     value
                 }}</nuxt-link>
             </template>
+            <span v-else-if="col.member === 'lastUsed'">
+                <Timeago :date="row.lastUsed" />
+            </span>
             <span v-else>
                 <template v-if="col.transform !== undefined">
                     {{ col.transform(value) }}
@@ -22,6 +25,7 @@
 <script lang="ts" setup>
 import type { TableColumnConfiguration } from '~/types'
 import type { ProjectSearchResult } from '~~/shared/types'
+import Timeago from '../Timeago.vue'
 
 const { repos } = defineProps<{ repos: ProjectSearchResult[] }>()
 
@@ -29,6 +33,10 @@ const columnConfiguration: TableColumnConfiguration[] = [
     {
         width: 'minmax(60px, 0.25fr)',
         member: 'title',
+    },
+    {
+        member: 'lastUsed',
+        cellClassList: 'data-col-secondary monospaced',
     },
     {
         member: 'description',
