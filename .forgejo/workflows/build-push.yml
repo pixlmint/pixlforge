@@ -27,7 +27,7 @@ jobs:
           push: true
           context: .
           tags: registry.pixlmint.ch/pixlforge:latest,registry.pixlmint.ch/pixlforge:${{ env.FORGEJO_SHA }}
-          build-args:
+          build-args: |
             VERSION=${{ env.FORGEJO_SHA }}
             BUILD_DATE=${{ steps.date.outputs.build_date }}
 
