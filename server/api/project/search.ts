@@ -1,7 +1,7 @@
 import z from 'zod'
 import { Temporal } from '@js-temporal/polyfill'
 import type { H3Event } from 'h3'
-import { repoGet, repoSearch, userListRepos } from '~~/lib/forgejo'
+import { repoGet, repoListBranches, userListRepos } from '~~/lib/forgejo'
 import type { Repository } from '~~/lib/forgejo'
 import type { PortfolioCollectionItem, SQLOperator } from '@nuxt/content'
 import type { ProjectSearchResult } from '~~/shared/types'
@@ -167,6 +167,27 @@ export const getAll = async <
     return fullResponse
 }
 
+const getRepoLastCommitted = async (repo: Repository): Promise<Temporal.Instant> => {
+    const branches = await repoListBranches({
+        path: { owner: repo.owner!.login!, repo: repo.name! },
+    })
+
+    if (branches.error) throw branches.error
+
+    const latestBranchCommitDates = branches
+        .data!.map((branch) => {
+            return branch.commit?.timestamp !== undefined
+                ? Temporal.Instant.from(branch.commit?.timestamp)
+                : undefined
+        })
+        .filter((d) => d !== undefined)
+        .sort(Temporal.Instant.compare)
+
+    return latestBranchCommitDates.length > 0
+        ? latestBranchCommitDates[0]!
+        : Temporal.Instant.from(repo.updated_at!)
+}
+
 const findRepositories = async (
     event: H3Event,
     filter: ProjectFilter,
@@ -185,6 +206,11 @@ const findRepositories = async (
 
     if (exclude !== undefined) {
         repos = repos.filter((repo) => !exclude.has(repo.name!))
+    }
+
+    for (const repo of repos) {
+        const lastUpdateAt = await getRepoLastCommitted(repo)
+        repo.updated_at = lastUpdateAt.toString()
     }
 
     return await Promise.all(
