@@ -172,10 +172,12 @@ const getRepoLastCommitted = async (repo: Repository): Promise<Temporal.Instant>
         path: { owner: repo.owner!.login!, repo: repo.name! },
     })
 
-    if (branches.error) throw branches.error
+    if (branches.error || branches.data === null || branches.data === undefined) {
+        return Temporal.Instant.fromEpochMilliseconds(0)
+    }
 
-    const latestBranchCommitDates = branches
-        .data!.map((branch) => {
+    const latestBranchCommitDates = branches.data
+        .map((branch) => {
             return branch.commit?.timestamp !== undefined
                 ? Temporal.Instant.from(branch.commit?.timestamp)
                 : undefined
