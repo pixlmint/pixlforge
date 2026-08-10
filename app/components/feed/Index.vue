@@ -1,7 +1,7 @@
 <template>
     <input v-if="isDebugBuild" type="checkbox" v-model="debugModeActive" />
-    <div class="feed" v-for="(entry, index) in feed" :key="index">
-        <FeedItem :entry="entry" :debug="debug" />
+    <div class="feed">
+        <FeedItem v-for="(entry, index) in feed" :key="index" :entry="entry" :debug="debug" />
     </div>
 </template>
 <script lang="ts" setup>

@@ -54,6 +54,7 @@ export default defineNuxtConfig({
                 '@vue/devtools-core',
                 '@vue/devtools-kit',
                 'vue-json-pretty',
+                'vue-icons-plus/go',
             ],
         },
     },

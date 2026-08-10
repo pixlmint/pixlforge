@@ -72,7 +72,11 @@ export type FeedCommitEntryContent = {
     Len: number
 }
 
-export type ActivityContent = FeedCommitEntryContent | IssueContent
+export type ActivityContent =
+    | FeedCommitEntryContent
+    | IssueContent
+    | [string, string]
+    | { issueId: number; text: string }
 
 export type ActivityEntry = {
     user: string

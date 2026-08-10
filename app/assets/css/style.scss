@@ -1,3 +1,5 @@
+@import "mixins";
+
 :root {
     --color-bg: #090909;
     --color-bg-secondary: #000;
@@ -19,6 +21,19 @@ a {
 
     &:visited {
         color: var(--color-primary);
+    }
+
+    &[target="_blank"] {
+        position: relative;
+        padding-right:0.7em;
+    
+        &::after {
+            content: "↗";
+            font-size: 0.7em;
+            position: absolute;
+            top: -2px;
+            right: 4px;
+        }
     }
 }
 
@@ -83,22 +98,54 @@ code {
 
 .feed {
     .feed-item {
-        margin: 5px 0;
-        padding: 0 5px;
+        padding: 10px 5px;
         display: flex;
+        border-bottom: 1px solid var(--color-border);
 
         .feed-item-time {
             color: var(--color-secondary);
         }
 
         .feed-item-content {
+            width: 100%;
+
             .feed-item-content-header {
                 display: flex;
+                justify-content: space-between;
                 color: var(--color-secondary);
+
+                @include size-med {
+                    display: block;
+                }
+
+                @include size-large {
+                    display: flex;
+                }
+
+                .feed-item-header-icon {
+                    margin-bottom: -1px;
+                }
+                
+                a {
+                    color: white;
+                    text-decoration: none;
+                }
+            }
+
+            .feed-item-content-text {
+                margin: 0.5rem 0;
             }
 
             .feed-item-content-footer {
                 color: var(--color-secondary);
+            }
+        }
+
+        &:hover {
+            background-color: #111;
+
+            .feed-item-content-header a:not([target="_blank"]) {
+                text-decoration: underline;
             }
         }
     }

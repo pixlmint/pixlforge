@@ -62,6 +62,12 @@ export const parseActivityContent = (entry: Activity): null | ActivityContent =>
                 issueId: Number.parseInt(parsed[0]),
                 text: parsed[1],
             }
+        case 'close_issue':
+        case 'reopen_issue':
+            return {
+                issueId: Number.parseInt(parsed[0]),
+                text: '',
+            }
         default:
             return parsed
     }
