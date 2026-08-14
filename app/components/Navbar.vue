@@ -1,9 +1,7 @@
 <template>
     <div class="header monospaced">
         <div class="breadcrumbs">
-            <div class="breadcumb-item breadcumb-root">
-                <nuxt-link to="/">Home</nuxt-link>
-            </div>
+            <nuxt-link class="breadcumb-item breadcrumb-root" to="/">~</nuxt-link>
             <template v-for="(el, index) in route" :key="index">
                 <div class="breadcrumb-separator">/</div>
                 <div
@@ -54,6 +52,11 @@ const route = computed(() => {
     .breadcrumbs {
         display: flex;
         gap: 4px;
+
+        .breadcrumb-root {
+            color: var(--color-text);
+            text-decoration: none;
+        }
 
         .breadcrumb-separator {
             color: var(--color-secondary);
