@@ -1,4 +1,4 @@
-@import "mixins";
+@use "mixins" as *;
 
 :root {
     --color-bg: #090909;

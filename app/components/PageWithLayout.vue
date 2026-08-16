@@ -54,7 +54,7 @@ const contentColumnWidths = computed(() => {
 </script>
 
 <style lang="scss">
-@import 'assets/css/mixins';
+@use 'assets/css/mixins' as *;
 
 :root {
     --content-column-width: 50%;

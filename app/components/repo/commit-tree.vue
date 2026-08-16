@@ -107,7 +107,7 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
-@import 'assets/css/mixins';
+@use 'assets/css/mixins' as *;
 
 :root {
     --commit-history-item-height: 10px;
