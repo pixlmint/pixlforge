@@ -1,5 +1,15 @@
 import { Temporal } from '@js-temporal/polyfill'
 
+export type Serialize<T> = T extends Temporal.Instant
+    ? string // If it's a Temporal, turn it into a string
+    : T extends Date
+      ? string
+      : T extends Array<infer U>
+        ? Array<Serialize<U>> // If it's an array, serialize the elements inside
+        : T extends object
+          ? { [K in keyof T]: Serialize<T[K]> } // If it's an object, serialize its properties
+          : T // Otherwise, leave it alone (string, number, boolean, etc.)
+
 export type HistoryCommit = {
     sha: string
     message: string
@@ -25,6 +35,8 @@ export type ProjectSearchResult = {
     tags?: string[]
     archived?: boolean
 }
+
+export type SerializedProjectSearchResult = Serialize<ProjectSearchResult>
 
 type RepoReadme = {
     raw?: string

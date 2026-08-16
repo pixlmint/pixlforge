@@ -8,7 +8,6 @@ import { defineRepoContentHandler } from './util'
 import type { RepoRequestData } from '.'
 import { JSDOM } from 'jsdom'
 import hljs from 'highlight.js'
-import { PortfolioCollectionItem } from '@nuxt/content'
 import type { H3Event } from 'h3'
 import type { RepoReadme } from '~~/shared/types'
 

@@ -12,7 +12,7 @@ export type RepoRequestData = {
 }
 
 export default defineRepoContentHandler(async (event, repoRequestData, latestCommit) => {
-    const repoMeta = await getRepoMeta(repoRequestData)
+    const repoMeta = await getRepoMeta(event, repoRequestData)
     const projectContent = await getProjectContent(event, repoRequestData, latestCommit)
     const latestRepoIssues = await getLatestRepoIssues(repoRequestData)
     const commits = await getCommitGraph(repoRequestData)

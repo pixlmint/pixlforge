@@ -1,6 +1,6 @@
 ---
 title: Inzuro
-technologies:
+tags:
   - vue
 ---
 

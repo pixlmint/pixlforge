@@ -3,10 +3,21 @@ import { Temporal } from '@js-temporal/polyfill'
 import type { H3Event } from 'h3'
 import { repoGet, repoListBranches, userListRepos } from '~~/lib/forgejo'
 import type { Repository } from '~~/lib/forgejo'
-import type { PortfolioCollectionItem, SQLOperator } from '@nuxt/content'
+import type {
+    Collection,
+    CollectionQueryBuilder,
+    CollectionQueryGroup,
+    PortfolioCollectionItem,
+    SQLOperator,
+} from '@nuxt/content'
 import type { ProjectSearchResult } from '~~/shared/types'
 import { createWakapiWrapper } from '~~/server/lib/wakapi'
-import type { ProjectFilter, QueryOperator, SearchOptions } from '~~/server/types'
+import type {
+    ListQueryOperator,
+    ProjectFilter,
+    QueryOperator,
+    SearchOptions,
+} from '~~/server/types'
 import { isProjectIncluded } from '~~/server/lib/search-utils'
 
 const op = z.literal(['eq', 'ge', 'le', 'gt', 'lt', 'in', 'nin', 'any', 'all'])
@@ -30,7 +41,7 @@ const searchRequestSchema = z.object({
     filter: filter.optional(),
 })
 
-const queryFilterOperatorToSqlOperator = (op: QueryOperator): SQLOperator => {
+const queryFilterOperatorToSqlOperator = (op: QueryOperator | ListQueryOperator): SQLOperator => {
     switch (op) {
         case 'eq':
             return '='
@@ -42,6 +53,13 @@ const queryFilterOperatorToSqlOperator = (op: QueryOperator): SQLOperator => {
             return '>'
         case 'lt':
             return '<'
+        case 'any':
+        case 'in':
+            return 'IN'
+        case 'nin':
+            return 'NOT IN'
+        case 'all':
+            return '='
     }
 }
 
@@ -74,28 +92,54 @@ const repositoryEntryToProjectSearchResult = (repo: Repository): ProjectSearchRe
     }
 }
 
+const applyFilterToQuery = <T>(
+    filter: ProjectFilter,
+    query: CollectionQueryBuilder<T> | CollectionQueryGroup<T>,
+): CollectionQueryBuilder<T> | CollectionQueryGroup<T> => {
+    if (filter.field !== undefined) {
+        switch (filter.field) {
+            case 'latestUpdate':
+                query = query.where(
+                    'date',
+                    queryFilterOperatorToSqlOperator(filter.operator!),
+                    filter.value,
+                )
+                break
+            case 'tags':
+                query = query.where('tags', 'LIKE', `%${filter.value}%`)
+                break
+        }
+    }
+
+    if (filter.and !== undefined) {
+        filter.and.forEach((andFilter) => {
+            query = query.andWhere((andQuery) => applyFilterToQuery(andFilter, andQuery))
+        })
+    }
+
+    if (filter.or !== undefined) {
+        filter.or.forEach((orFilter) => {
+            query = query.orWhere((orQuery) => applyFilterToQuery(orFilter, orQuery))
+        })
+    }
+
+    return query
+}
+
 const findPortfolioEntries = async (
     event: H3Event,
     filter: ProjectFilter,
 ): Promise<ProjectSearchResult[]> => {
-    let query = queryCollection(event, 'portfolio')
-
-    if (filter.field === 'latestUpdate') {
-        query = query.where(
-            'date',
-            queryFilterOperatorToSqlOperator(filter.operator!),
-            filter.value,
-        )
-    }
+    let query = applyFilterToQuery(
+        filter,
+        queryCollection(event, 'portfolio'),
+    ) as CollectionQueryBuilder<PortfolioCollectionItem>
 
     let items = await query.all()
 
     return await Promise.all(
         items
             .map(portfolioEntryToProjectSearchResult)
-            .filter((project) => {
-                return isProjectIncluded(project, filter)
-            })
             .map(async (entry) => {
                 if (!entry.forgeId) return entry
 
@@ -342,13 +386,13 @@ export const searchProjects = async (
 }
 
 export default defineEventHandler(async (event): Promise<ProjectSearchResult[]> => {
-    const request = await getValidatedQuery(event, (body) => searchRequestSchema.parse(body))
+    const requestBody = await readValidatedBody(event, (body) => searchRequestSchema.parse(body))
 
     const options: SearchOptions = {
-        filter: request.filter,
+        filter: requestBody.filter,
         order: {
-            field: request.order,
-            direction: request.orderDirection,
+            field: requestBody.order,
+            direction: requestBody.orderDirection,
         },
     }
 

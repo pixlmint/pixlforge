@@ -8,7 +8,7 @@ export default defineContentConfig({
             source: 'portfolio/**/*.md',
             schema: z.object({
                 date: z.date().optional(),
-                technologies: z.array(z.string()).optional(),
+                tags: z.array(z.string()).optional(),
                 repository: z.string().optional(),
                 externalRepository: z.string().optional(),
             }),

@@ -1,5 +1,5 @@
 ---
-technologies:
+tags:
   - docker
 repository: wiki
 ---
