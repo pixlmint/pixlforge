@@ -4,7 +4,6 @@ import type { H3Event } from 'h3'
 import { repoGet, repoListBranches, userListRepos } from '~~/lib/forgejo'
 import type { Repository } from '~~/lib/forgejo'
 import type {
-    Collection,
     CollectionQueryBuilder,
     CollectionQueryGroup,
     PortfolioCollectionItem,
@@ -66,15 +65,32 @@ const queryFilterOperatorToSqlOperator = (op: QueryOperator | ListQueryOperator)
 const portfolioEntryToProjectSearchResult = (
     entry: PortfolioCollectionItem,
 ): ProjectSearchResult => {
+    let latestUpdate = Temporal.Instant.fromEpochMilliseconds(0)
+    if (entry.lastWorkedOn) {
+        try {
+            latestUpdate = Temporal.Instant.from(entry.lastWorkedOn)
+        } catch (e) {
+            latestUpdate = Temporal.PlainDateTime.from(entry.lastWorkedOn)
+                .toZonedDateTime('UTC')
+                .toInstant()
+        }
+    } else if (entry.date) {
+        try {
+            latestUpdate = Temporal.Instant.from(entry.date)
+        } catch (e) {
+            latestUpdate = Temporal.PlainDateTime.from(entry.date)
+                .toZonedDateTime('UTC')
+                .toInstant()
+        }
+    }
+
     return {
         title: entry.title,
         description: entry.description,
         portfolioId: entry.path,
         forgeId: entry.repository,
-        latestUpdate: entry.date
-            ? Temporal.Instant.from(entry.date)
-            : Temporal.Instant.fromEpochMilliseconds(0),
-        tags: entry.technologies ?? [],
+        latestUpdate: latestUpdate,
+        tags: entry.tags ?? [],
         archived: false,
     }
 }
@@ -100,14 +116,17 @@ const applyFilterToQuery = <T>(
         switch (filter.field) {
             case 'latestUpdate':
                 query = query.where(
-                    'date',
+                    'lastWorkedOn',
                     queryFilterOperatorToSqlOperator(filter.operator!),
                     filter.value,
                 )
                 break
             case 'tags':
-                query = query.where('tags', 'LIKE', `%${filter.value}%`)
+                const op = filter.operator! === 'in' ? 'LIKE' : 'NOT LIKE'
+                query = query.where('tags', op, `%${filter.value}%`)
                 break
+            case 'archived':
+                query = query.where('title', 'LIKE', '%')
         }
     }
 
