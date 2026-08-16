@@ -3,6 +3,10 @@ import { Temporal } from '@js-temporal/polyfill'
 import type { ProjectSearchResult } from '~~/shared/types'
 
 export const isProjectIncluded = (project: ProjectSearchResult, filter: ProjectFilter): boolean => {
+    if (filter.field === 'title') {
+        return project.title === filter.value
+    }
+
     if (filter.field === 'archived') {
         return project.archived === (filter.value === 1)
     }

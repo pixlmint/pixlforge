@@ -116,6 +116,10 @@ export type ProjectFilter =
           field?: 'latestUpdate' | 'lastUsed' | 'archived'
           operator?: QueryOperator
       })
+    | (BaseProjectFilter & {
+          field?: 'title'
+          operator?: 'eq'
+      })
 
 export type OrderConfig = {
     field: 'technology' | 'latestUpdate' | 'lastUsedFrecency' | 'lastUsed' | 'title'

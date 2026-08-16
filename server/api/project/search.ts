@@ -21,7 +21,7 @@ import { isProjectIncluded } from '~~/server/lib/search-utils'
 
 const op = z.literal(['eq', 'ge', 'le', 'gt', 'lt', 'in', 'nin', 'any', 'all'])
 
-const filterBy = z.literal(['tags', 'archived', 'latestUpdate', 'lastUsed'])
+const filterBy = z.literal(['tags', 'archived', 'latestUpdate', 'lastUsed', 'title'])
 const filter = z.object({
     field: filterBy.optional(),
     value: z.any().optional(),
@@ -127,6 +127,10 @@ const applyFilterToQuery = <T>(
                 break
             case 'archived':
                 query = query.where('title', 'LIKE', '%')
+                break
+            case 'title':
+                query = query.where('title', 'LIKE', filter.value)
+                break
         }
     }
 
