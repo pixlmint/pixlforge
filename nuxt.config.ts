@@ -16,6 +16,9 @@ if (!import.meta.dev) {
         '/portfolio/**': {
             swr: 60 * 60 * 24,
         },
+        '/tech/**': {
+            swr: 60 * 60,
+        },
         '/cv': {
             prerender: true,
         },
