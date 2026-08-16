@@ -11,6 +11,7 @@ export default defineContentConfig({
                 tags: z.array(z.string()).optional(),
                 repository: z.string().optional(),
                 externalRepository: z.string().optional(),
+                lastWorkedOn: z.date().optional(),
             }),
         }),
         pages: defineCollection({
