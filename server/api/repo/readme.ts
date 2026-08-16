@@ -17,7 +17,8 @@ const getDecodedFileContent = async (file: ContentsResponse): Promise<string | u
     }
 
     if (file.encoding === 'base64') {
-        return atob(file.content)
+        const bufferObj = Buffer.from(file.content, 'base64')
+        return bufferObj.toString('utf8')
     }
 }
 
