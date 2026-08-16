@@ -131,14 +131,24 @@ const applyFilterToQuery = <T>(
     }
 
     if (filter.and !== undefined) {
-        filter.and.forEach((andFilter) => {
-            query = query.andWhere((andQuery) => applyFilterToQuery(andFilter, andQuery))
+        query.andWhere((andQuery) => {
+            let curQuery = andQuery
+            filter.and!.forEach((andFilter) => {
+                curQuery = applyFilterToQuery(andFilter, curQuery)
+            })
+
+            return curQuery
         })
     }
 
     if (filter.or !== undefined) {
-        filter.or.forEach((orFilter) => {
-            query = query.orWhere((orQuery) => applyFilterToQuery(orFilter, orQuery))
+        query.orWhere((orQuery) => {
+            let curQuery = orQuery
+            filter.or!.forEach((orFilter) => {
+                curQuery = applyFilterToQuery(orFilter, curQuery)
+            })
+
+            return curQuery
         })
     }
 
