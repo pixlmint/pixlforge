@@ -21,3 +21,33 @@ timeline:
       text: general kenobi
 ---
 ::
+
+## Featured Projects
+
+::FeaturedEntries
+---
+entries:
+  - wiki
+  - nacho
+  - inzuro
+  - title: another
+    target: 'asdf'
+  - title: another
+    target: 'asdf'
+  - title: another
+    target: 'asdf'
+  - title: another
+    target: 'asdf'
+  - title: another
+    target: 'asdf'
+  - title: another
+    target: 'asdf'
+  - title: another
+    target: 'asdf'
+  - title: another
+    target: 'asdf'
+  - title: another
+    target: 'asdf'
+    thumbnail: https://www.pixelstalk.net/wp-content/uploads/images6/4K-Wallpaper-Phone-Wallpaper-City-Night-Light-414x620.jpg
+---
+::

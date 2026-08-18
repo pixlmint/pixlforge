@@ -25,18 +25,3 @@ if (response.error.value) console.error(response.error.value)
 
 const projects = response.data!.value
 </script>
-
-<style lang="scss">
-.card-list {
-    display: flex;
-    gap: 5px;
-
-    .page-card {
-        max-width: 25%;
-        padding: 1rem;
-        border: 2px solid white;
-        text-decoration: none;
-        color: var(--color-text);
-    }
-}
-</style>
