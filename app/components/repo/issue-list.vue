@@ -1,7 +1,7 @@
 <template>
     <div class="issue-list">
         <div
-            v-if="issues.length > 0"
+            v-if="issues && issues.length > 0"
             v-for="(issue, _) in issues"
             :key="issue.id"
             class="issue-list-item"
