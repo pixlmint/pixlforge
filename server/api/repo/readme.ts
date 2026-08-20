@@ -92,6 +92,11 @@ const getRepoReadme = defineCachedFunction(
 
                 const rawReadme = await getDecodedFileContent(readmeContent.data!)
                 const processedReadme = cleanMarkdown(rawReadme!, repoRequestData)
+
+                if (processedReadme.trim() === '') {
+                    return [rawReadme, '']
+                }
+
                 const renderedReadme = await renderMarkdown(processedReadme)
 
                 return [rawReadme, renderedReadme]
