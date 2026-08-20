@@ -95,5 +95,5 @@ export default defineNuxtConfig({
         viewTransition: false,
     },
 
-    modules: ['@nuxthub/core', '@nuxt/content', '@nuxtjs/sitemap'],
+    modules: ['@nuxthub/core', '@nuxt/content', '@nuxtjs/sitemap', '@nuxt/image'],
 })
