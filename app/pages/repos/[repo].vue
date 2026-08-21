@@ -79,23 +79,3 @@ const content: PageWithLayoutColumn = {
     ],
 }
 </script>
-
-<style lang="scss">
-ul.tag-list {
-    list-style-type: none;
-    display: flex;
-    gap: 0.5rem;
-    padding-left: 0;
-
-    li {
-        display: block;
-
-        a {
-            text-decoration: none;
-            padding: 0.2rem;
-            border: 1px solid var(--color-border);
-            color: var(--color-secondary);
-        }
-    }
-}
-</style>
