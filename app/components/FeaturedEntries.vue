@@ -28,6 +28,7 @@ const entriesResponse = await useFetch('/api/project/search', {
             or: orFilter,
         },
     },
+    server: false,
 })
 
 let entries = ref<(SerializedProjectSearchResult | BasicFeaturedProject)[]>([])
