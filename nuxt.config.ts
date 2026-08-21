@@ -20,7 +20,7 @@ if (!import.meta.dev) {
             swr: 60 * 60,
         },
         '/cv': {
-            prerender: true,
+            swr: 60 * 60 * 6,
         },
     }
 }
