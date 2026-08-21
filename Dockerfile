@@ -1,5 +1,8 @@
 FROM node:24-alpine AS build
 
+ARG VERSION=dev
+ARG BUILD_DATE=1970-01-01
+
 WORKDIR /app
 
 RUN corepack enable
@@ -9,6 +12,9 @@ COPY package.json package-lock.json ./
 RUN npm i
 
 COPY . ./
+
+ENV NUXT_PUBLIC_VERSION=${VERSION}
+ENV NUXT_PUBLIC_BUILD_DATE=${BUILD_DATE}
 
 RUN npm run build
 
