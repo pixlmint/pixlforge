@@ -1,5 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
+import { promises as fs } from 'node:fs'
+import { join } from 'node:path'
+
 let routeRules = {}
 
 if (!import.meta.dev) {
@@ -12,9 +15,6 @@ if (!import.meta.dev) {
         },
         '/repos/**': {
             swr: 60 * 5,
-        },
-        '/portfolio/**': {
-            swr: 60 * 60 * 24,
         },
         '/tech/**': {
             swr: 60 * 60,
@@ -88,6 +88,17 @@ export default defineNuxtConfig({
 
     sitemap: {
         sources: ['/api/sitemap'],
+    },
+
+    hooks: {
+        async 'prerender:routes'(ctx) {
+            const dir = join(process.cwd(), 'content/portfolio')
+            const files = await fs.readdir(dir)
+
+            for (const file of files) {
+                ctx.routes.add(`/portfolio/${file.replace(/\.md$/, '')}`)
+            }
+        },
     },
 
     experimental: {
