@@ -1,7 +1,7 @@
 <template>
     <div class="writeup-page">
         <div class="writeup-header">
-            <h2>{{ project }}</h2>
+            <h2>{{ title }}</h2>
             <ul class="tag-list">
                 <li class="monospaced" v-if="data" v-for="tag in data.tags" :key="tag">
                     <NuxtLink :to="`/tech/${tag}`">{{ tag }}</NuxtLink>
@@ -15,11 +15,12 @@
 
 <script lang="ts" setup>
 const route = useRoute()
-const project = route.params.project
 
 const { data } = await useAsyncData(route.path, () =>
     queryCollection('portfolio').path(route.path).first(),
 )
+
+const title = data.value!.title
 </script>
 
 <style lang="scss">
