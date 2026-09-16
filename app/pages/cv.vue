@@ -1,5 +1,5 @@
 <template>
-    <ContentRenderer v-if="cv" :value="cv" />
+    <ContentRenderer class="content-page" v-if="cv" :value="cv" />
 </template>
 
 <script lang="ts" setup>

@@ -44,7 +44,7 @@ const { timeline } = defineProps<{ timeline: { time: string; text: string; title
             border: 2px solid white;
             position: absolute;
             left: -10px;
-            top: 0px;
+            top: 4px;
         }
 
         &:after {
@@ -60,7 +60,7 @@ const { timeline } = defineProps<{ timeline: { time: string; text: string; title
         .item-title {
             font-size: 1.5rem;
             padding-bottom: 1rem;
-            line-height: 0.8;
+            line-height: 1.2;
         }
 
         .time {

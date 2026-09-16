@@ -18,6 +18,8 @@ const { skills } = defineProps<{ skills: Skill[] }>()
 .skill-list {
     display: flex;
     gap: 10px;
+    padding: unset;
+    flex-wrap: wrap;
 
     li {
         list-style: none;

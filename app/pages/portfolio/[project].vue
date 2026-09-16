@@ -9,7 +9,7 @@
             </ul>
         </div>
 
-        <ContentRenderer class="writeup-content" v-if="data" :value="data" />
+        <ContentRenderer class="content-page writeup-content" v-if="data" :value="data" />
     </div>
 </template>
 

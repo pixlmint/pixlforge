@@ -9,6 +9,11 @@
     --color-border: rgb(40, 40, 40);
 }
 
+img {
+    max-width: 100%;
+}
+
+
 body {
     background-color: var(--color-bg-secondary);
     color: var(--color-text);
@@ -154,10 +159,6 @@ code {
 }
 
 .repo-readme {
-    img {
-        max-width: 100%;
-    }
-
     table {
         border: 2px solid var(--color-secondary);
 
@@ -186,16 +187,36 @@ code {
     }
 }
 
+.content-page {
+    h2:not(:first-child) {
+        margin-top: 2rem;
+    }
+
+    .narrow-content {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+}
+
 .card-list {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
+    @include size-med {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
 
     .page-card {
-        width: 230px;
+        width: 100%;
+        display: block;
         border: 2px solid white;
         text-decoration: none;
         color: var(--color-text);
+        margin-bottom: 1rem;
+
+        @include size-med {
+            width: 230px;
+            margin-bottom: unset;
+        }
 
         .card-thumbnail {
             width: 100%;
