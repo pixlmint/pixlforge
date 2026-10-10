@@ -31,13 +31,13 @@ skills:
 timeline:
     - time: 2023 - now
       title: Fullstack Developer at MeteoNews AG
-      text: I'm working on the main homepage, as well as helping to automate tasks using Python
-    - time: 2023 - now
+      text: Develop new features for the user-facing meteo website and the meteo API, develop/ improve weather data processing programs.
+    - time: 2023 - 2027
       title: Bachelor in Computer Science
       text: at ZHAW School of Engineering
     - time: 2019 - 2022
       title: Fullstack Developer at NxtLvl GmBH
-      text: Launched the Inzuro Platform using Symfony and Docker, helped maintain small businesses websites
+      text: Launched the Inzuro Platform using Symfony and Docker, maintained various small businesses websites and shops.
     - time: 2018 - 2019
       title: Freelance Website maintainer for meintrainingsplan.ch
       text: To gain experience in the field and earn some extra money I maintained the website for meintrainingsplan.ch (now coachme.fit)
