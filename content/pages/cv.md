@@ -47,6 +47,22 @@ timeline:
 ---
 ::
 
+## Connect With Me
+::ContactLinks
+---
+links:
+    - url: https://linkedin.com
+      content: LinkedIn
+      icon: linkedin
+    - url: mailto:christian.groeber@pixlmint.ch
+      content: Email Me
+      icon: email
+    - url: https://github.com/pixlmint
+      content: GitHub
+      icon: github
+---
+::
+
 ::
 
 ## Featured Projects
