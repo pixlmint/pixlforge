@@ -29,5 +29,9 @@ const { level } = defineProps<{ level: 'info' | 'error' | 'warning' }>()
     p {
         margin: 0;
     }
+
+    img.icon {
+        height: 1rem;
+    }
 }
 </style>

@@ -5,9 +5,3 @@
 <script lang="ts" setup>
 const { icon } = defineProps<{ icon: string }>()
 </script>
-
-<style lang="scss" scoped>
-.icon {
-    height: 1rem;
-}
-</style>
