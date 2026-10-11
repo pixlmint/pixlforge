@@ -82,6 +82,8 @@ const contentColumnWidths = computed(() => {
 
         .item-header {
             display: flex;
+            align-items: center;
+            justify-content: space-between;
             color: var(--color-text);
             border-bottom: 1px solid white;
             text-transform: uppercase;
