@@ -9,6 +9,10 @@ import type { PageWithLayoutColumn } from '~/types'
 
 const { data: recentRepos } = await useFetch('/api/recent/repos')
 
+useHead({
+    title: 'home | pixlforge',
+})
+
 const content: PageWithLayoutColumn = {
     columns: ['calc(100vw - max(300px, 30vw) - 2rem)', 'max(300px, 30vw)'],
     gridTemplateAreas: ['repos issues'],

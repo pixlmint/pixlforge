@@ -10,6 +10,10 @@
 const route = useRoute()
 const technology = route.params.technology! as string
 
+useHead({
+    title: `tag ${technology} | pixlforge`,
+})
+
 const response = await useFetch('/api/project/search', {
     method: 'POST',
     body: {

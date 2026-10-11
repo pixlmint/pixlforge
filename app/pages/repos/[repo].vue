@@ -42,6 +42,10 @@ const forgeLink = computed(() => {
     return `${baseUrl}/${primaryUser}/${repo.value}`
 })
 
+useHead({
+    title: `${repo.value as string} | pixlforge`,
+})
+
 const repoBaseResponse = await useFetch('/api/repo/base', { query: { repo: repo.value } })
 const readme = repoBaseResponse.data!.value.readme as RepoReadme
 const meta = repoBaseResponse.data!.value.meta

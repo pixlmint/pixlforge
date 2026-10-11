@@ -21,6 +21,11 @@ const { data } = await useAsyncData(route.path, () =>
 )
 
 const title = data.value!.title
+
+useHead({
+    title: `${title} | pixlforge`,
+    meta: [{ name: 'description', content: data.value!.description }],
+})
 </script>
 
 <style lang="scss">

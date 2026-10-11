@@ -6,4 +6,8 @@
 const { data: cv } = useAsyncData('cv-content', () =>
     queryCollection('pages').path('/pages/cv').first(),
 )
+
+useHead({
+    title: 'CV | Christian Gröber',
+})
 </script>
