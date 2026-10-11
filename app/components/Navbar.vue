@@ -20,12 +20,14 @@
 </template>
 
 <script lang="ts" setup>
-const route = computed(() => {
-    return useRoute()
-        .path.trim()
+const { inputRoute } = defineProps<{ inputRoute?: string }>()
+
+const route = computed(() =>
+    (inputRoute ?? useRoute().path)
+        .trim()
         .replace(/^\/+|\/+$/g, '')
-        .split('/')
-})
+        .split('/'),
+)
 </script>
 
 <style lang="scss">
