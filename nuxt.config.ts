@@ -46,6 +46,12 @@ export default defineNuxtConfig({
 
     app: {
         pageTransition: { name: 'page', mode: 'default' },
+        head: {
+            title: 'pixlforge',
+            htmlAttrs: {
+                lang: 'en',
+            },
+        },
     },
 
     routeRules: routeRules,
