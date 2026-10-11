@@ -1,12 +1,22 @@
 <template>
     <div>
-        <h2>{{ repo }}</h2>
-
-        <ul class="tag-list">
-            <li class="monospaced" v-for="tag in meta.tags" :key="tag">
-                <NuxtLink :to="`/tech/${tag}`">{{ tag }}</NuxtLink>
-            </li>
-        </ul>
+        <div class="repo-header">
+            <h2>{{ repo }}</h2>
+            <a
+                class="forgejo-link no-blank-arrow"
+                :href="forgeLink"
+                title="Open in Forgejo"
+                target="_blank"
+            >
+                <Icon icon="forgejo" />
+            </a>
+            <span>|</span>
+            <ul class="tag-list">
+                <li class="monospaced" v-for="tag in meta.tags" :key="tag">
+                    <NuxtLink :to="`/tech/${tag}`">{{ tag }}</NuxtLink>
+                </li>
+            </ul>
+        </div>
 
         <PageWithLayout :columns="content" />
     </div>
@@ -18,7 +28,6 @@ import IssueList from '~/components/repo/issue-list.vue'
 import ReadmeHead from '~/components/repo/readme-head.vue'
 import Readme from '~/components/repo/readme.vue'
 import type { PageWithLayoutColumn } from '~/types'
-import { useForgeState } from '~~/composables/states'
 import type { Issue } from '~~/lib/forgejo'
 import type { HistoryCommit, RepoReadme } from '~~/shared/types'
 
@@ -26,10 +35,11 @@ const route = useRoute()
 
 const repo = computed(() => route.params.repo)
 
-const forgeState = useForgeState()
+const forgeLink = computed(() => {
+    const baseUrl = useRuntimeConfig().public.forgejoBaseUrl
+    const primaryUser = useRuntimeConfig().public.primaryUser
 
-onMounted(() => {
-    forgeState.value!.viewingRepo = repo.value as string
+    return `${baseUrl}/${primaryUser}/${repo.value}`
 })
 
 const repoBaseResponse = await useFetch('/api/repo/base', { query: { repo: repo.value } })
@@ -79,3 +89,15 @@ const content: PageWithLayoutColumn = {
     ],
 }
 </script>
+
+<style lang="scss">
+.repo-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    img {
+        padding-top: 8px;
+    }
+}
+</style>

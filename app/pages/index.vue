@@ -6,13 +6,6 @@
 import Feed from '~/components/feed/Index.vue'
 import Repositories from '~/components/root/Repositories.vue'
 import type { PageWithLayoutColumn } from '~/types'
-import { useForgeState } from '~~/composables/states'
-
-const forgeState = useForgeState()
-
-onMounted(() => {
-    forgeState.value!.viewingRepo = undefined
-})
 
 const { data: recentRepos } = await useFetch('/api/recent/repos')
 

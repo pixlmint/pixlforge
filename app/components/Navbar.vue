@@ -1,7 +1,9 @@
 <template>
     <div class="header monospaced">
         <div class="breadcrumbs">
-            <nuxt-link class="breadcumb-item breadcrumb-root" to="/">~</nuxt-link>
+            <nuxt-link class="breadcumb-item breadcrumb-root" to="/"
+                ><Icon icon="house"
+            /></nuxt-link>
             <template v-for="(el, index) in route" :key="index">
                 <div class="breadcrumb-separator">/</div>
                 <div
@@ -13,29 +15,11 @@
         </div>
         <div class="navlinks">
             <NuxtLink to="/cv">CV</NuxtLink>
-            <a class="forgejo-link" :href="forgejoUrl" title="Open Forgejo" target="_blank">
-                <Icon icon="forgejo" />
-            </a>
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-import { useForgeState } from '~~/composables/states'
-
-const forgeState = useForgeState()
-
-const baseUrl = useRuntimeConfig().public.forgejoBaseUrl
-const primaryUser = useRuntimeConfig().public.primaryUser
-
-const forgejoUrl = computed(() => {
-    if (forgeState.value === undefined || forgeState.value.viewingRepo === undefined) {
-        return baseUrl
-    }
-
-    return `${baseUrl}/${primaryUser}/${forgeState.value.viewingRepo}`
-})
-
 const route = computed(() => {
     return useRoute()
         .path.trim()
@@ -52,11 +36,7 @@ const route = computed(() => {
     .breadcrumbs {
         display: flex;
         gap: 4px;
-
-        .breadcrumb-root {
-            color: var(--color-text);
-            text-decoration: none;
-        }
+        align-items: center;
 
         .breadcrumb-separator {
             color: var(--color-secondary);
@@ -74,8 +54,18 @@ const route = computed(() => {
         gap: 0.5rem;
     }
 
-    .forgejo-link img {
+    .forgejo-link img,
+    .breadcrumb-root img {
         height: 1rem;
+    }
+
+    a {
+        padding: 2px 5px;
+        color: var(--color-text);
+    }
+
+    a:visited {
+        color: var(--color-text);
     }
 }
 </style>
