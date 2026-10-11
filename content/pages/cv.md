@@ -7,6 +7,8 @@ image: img/pages/cv/christiangroeber.jpg
 
 ::div{.narrow-content}
 
+:section-separator{mt='5rem'}
+
 ## Skills
 
 ::Skills
@@ -23,6 +25,8 @@ skills:
   - tech: vue
 ---
 ::
+
+:section-separator{mt='5rem'}
 
 ## Education and Work
 
@@ -46,6 +50,8 @@ timeline:
       text: Getting my EFZ as application Developer
 ---
 ::
+
+:section-separator{mt='5rem'}
 
 ## Connect With Me
 ::ContactLinks
