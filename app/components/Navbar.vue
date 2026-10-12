@@ -15,6 +15,7 @@
         </div>
         <div class="navlinks">
             <NuxtLink to="/cv">CV</NuxtLink>
+            <NuxtLink to="/about">About</NuxtLink>
         </div>
     </div>
 </template>
