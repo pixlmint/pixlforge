@@ -22,6 +22,9 @@ if (!import.meta.dev) {
         '/cv': {
             swr: 60 * 60 * 6,
         },
+        '/about': {
+            swr: 60 * 60 * 6,
+        },
     }
 }
 
