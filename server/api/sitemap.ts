@@ -1,20 +1,18 @@
 import type { H3Event } from 'h3'
-import { userListRepos } from '~~/lib/forgejo'
+import { getRepos } from './recent/repos'
 
-const listPortfolioEntries = async (event: H3Event) => {
-    const data = await queryCollection(event, 'portfolio').all()
+const listRepoEntries = async (event: H3Event) => {
+    const data = await getRepos(event)
 
-    return data.filter((entry) => entry.repository === null).map((entry) => entry.path)
-}
-
-const listRepoEntries = async () => {
-    const data = await userListRepos({ path: { username: useRuntimeConfig().public.primaryUser } })
-
-    if (data.data === undefined) return []
-
-    return data.data.map((repo) => `/repos/${repo.name!}`)
+    return data.map((project) => {
+        if (typeof project.forgeId === 'string') {
+            return `/repos/${project.forgeId}`
+        } else if (typeof project.portfolioId) {
+            return project.portfolioId
+        }
+    })
 }
 
 export default defineEventHandler(async (event) => {
-    return [...(await listPortfolioEntries(event)), ...(await listRepoEntries())]
+    return await listRepoEntries(event)
 })
