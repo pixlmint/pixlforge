@@ -5,21 +5,27 @@
 <script lang="ts" setup>
 const route = useRoute()
 
-const page = route.path.trim().replaceAll('/', '')
+const page = route.params.page
 
-const { data: pageContent } = useAsyncData(`${page}-content`, () =>
+const { data: pageContent, pending } = useAsyncData(`${page}-content`, () =>
     queryCollection('pages').path(`/pages/${page}`).first(),
 )
 
-if (pageContent.value) {
-    useHead({
-        title: `${pageContent.value?.title} | pixlforge`,
-        meta: [{ name: 'description', content: pageContent.value?.description }],
-    })
-} else {
-    throw createError({
-        status: 404,
-        statusText: 'Page not found',
-    })
-}
+watch(pending, async (isPending: boolean) => {
+    if (isPending) {
+        return
+    }
+    if (!pageContent.value) {
+        throw createError({
+            status: 404,
+            statusText: 'Page not found',
+            fatal: true,
+        })
+    } else {
+        useHead({
+            title: `${pageContent.value.title} | pixlforge`,
+            meta: [{ name: 'description', content: pageContent.value.description }],
+        })
+    }
+})
 </script>
