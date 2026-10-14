@@ -48,5 +48,13 @@
     "ts-jest": "^29.4.11",
     "typescript": "^6.0.3",
     "vue-json-pretty": "^2.6.0"
+  },
+  "allowScripts": {
+    "esbuild@0.27.2": true,
+    "esbuild@0.28.1": true,
+    "@parcel/watcher@2.5.6": true,
+    "better-sqlite3@12.11.1": true,
+    "simple-git-hooks@2.13.1": true,
+    "unrs-resolver@1.12.2": true
   }
 }
